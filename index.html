@@ -72,12 +72,14 @@
 
 <script>
   let stream;
-  const API_KEY = 'acc_968e5008bd8e30f';           // AÑADÍ COMILLAS
-  const API_SECRET = '083a2dfc7937f5631aa87423fedd3cf1'; // AÑADÍ COMILLAS
+  const CLARIFAI_API_KEY = 'f5b6d82d35aa41cebd9d451a999b7edb'; // <-- Pega tu clave
 
   async function openCamera() {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
       const video = document.createElement('video');
       video.srcObject = stream;
       video.play();
@@ -104,21 +106,30 @@
         const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
 
         try {
-          const response = await fetch(`https://api.imagga.com/v2/tags?image_base64=${base64}`, {
-            headers: { 'Authorization': 'Basic ' + btoa(API_KEY + ':' + API_SECRET) }
+          const response = await fetch('https://api.clarifai.com/v2/models/food-item-recognition/versions/1d5fd481e0e44a56a21d81a42e47e2e9/outputs', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Key ' + CLARIFAI_API_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              inputs: [{ data: { image: { base64: base64 } } }]
+            })
           });
 
           const data = await response.json();
-          const tags = (data.result?.tags || [])
-            .map(t => t.tag.en.toLowerCase())
-            .filter(t => ['tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 'bread', 'oil'].includes(t))
+          const concepts = data.outputs[0].data.concepts
+            .map(c => c.name.toLowerCase())
+            .filter(name => ['tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 'bread', 'oil', 'potato', 'carrot'].includes(name))
             .slice(0, 5);
 
           document.getElementById('loading').remove();
           const result = document.createElement('div');
-          result.innerHTML = `<p style="margin-top:20px; font-weight:700; color:#228B22;">
-            Detecté: <strong>${tags.length > 0 ? tags.join(', ') : 'nada comestible'}</strong>
-          </p>`;
+          result.innerHTML = `
+            <p style="margin-top:20px; font-weight:700; color:#228B22;">
+              Detecté: <strong>${concepts.length > 0 ? concepts.join(', ') : 'nada comestible'}</strong>
+            </p>
+          `;
           document.querySelector('.container').appendChild(result);
 
         } catch (err) {
