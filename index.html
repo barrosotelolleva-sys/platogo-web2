@@ -70,38 +70,64 @@
     <img id="preview" class="preview" style="display:none;">
   </div>
 
-  <script>
-    let stream;
-    
-    async function openCamera() {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
+ <script>
+  let stream;
+  const API_KEY = AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA ; // <-- TU CLAVE DE GOOGLE
+
+  async function openCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
+      
+      setTimeout(async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.height;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        
+        const img = document.getElementById('preview');
+        img.src = canvas.toDataURL('image/jpeg');
+        img.style.display = 'block';
+        
+        // CIERRA CÁMARA
+        stream.getTracks().forEach(track => track.stop());
+        
+        // SUBE A GOOGLE VISION
+        const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
+        const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requests: [{
+              image: { content: base64 },
+              features: [{ type: 'LABEL_DETECTION', maxResults: 10 }]
+            }]
+          })
         });
         
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.play();
+        const data = await response.json();
+        const labels = data.responses[0].labelAnnotations
+          .map(l => l.description.toLowerCase())
+          .filter(l => ['tomate', 'huevo', 'cebolla', 'leche', 'pollo', 'arroz', 'pasta', 'queso', 'pan', 'aceite'].includes(l))
+          .slice(0, 5);
         
-        setTimeout(() => {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          canvas.getContext('2d').drawImage(video, 0, 0);
-          
-          const img = document.getElementById('preview');
-          img.src = canvas.toDataURL('image/jpeg');
-          img.style.display = 'block';
-          
-          stream.getTracks().forEach(track => track.stop());
-          
-          alert('¡Foto capturada! Próximamente: IA detecta ingredientes');
-        }, 3000);
+        const result = document.createElement('div');
+        result.innerHTML = `<p style="margin-top:20px; font-weight:700; color:#228B22;">
+          ✅ Detecté: <strong>${labels.join(', ') || 'nada comestible 😅'}</strong>
+        </p>`;
+        document.querySelector('.container').appendChild(result);
         
-      } catch(err) {
-        alert('Error: Usa Chrome/Safari en móvil. O prueba en PC con webcam.');
-      }
+      }, 3000);
+      
+    } catch(err) {
+      alert('❌ Error cámara. Usa móvil + Chrome');
     }
-  </script>
+  }
+</script> 
 </body>
 </html>
