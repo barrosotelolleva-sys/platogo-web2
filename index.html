@@ -72,85 +72,67 @@
 
 <script>
   let stream;
-  const API_KEY = AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA; // <-- TU CLAVE EXACTA
+  const API_KEY = acc_968e5008bd8e30f;
+  const API_SECRET = 083a2dfc7937f5631aa87423fedd3cf1;
 
   async function openCamera() {
     try {
-      // ABRIR CÁMARA
-      stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       const video = document.createElement('video');
       video.srcObject = stream;
       video.play();
-      
+
       setTimeout(async () => {
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth || 640;
-        canvas.height = video.height || 480;
+        canvas.height = video.videoHeight || 480;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        
+
         const img = document.getElementById('preview');
         img.src = canvas.toDataURL('image/jpeg');
         img.style.display = 'block';
-        
-        // CIERRA CÁMARA
+
         stream.getTracks().forEach(track => track.stop());
-        
-        // MOSTRAR "ANALIZANDO..."
+
         const loading = document.createElement('p');
         loading.id = 'loading';
-        loading.innerHTML = '🔍 Analizando ingredientes...';
+        loading.innerHTML = 'Analizando con IA...';
         loading.style.color = '#228B22';
         loading.style.marginTop = '20px';
         document.querySelector('.container').appendChild(loading);
 
-        // ENVIAR A GOOGLE VISION
         const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
-        
+
         try {
-          const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              requests: [{
-                image: { content: base64 },
-                features: [{ type: 'LABEL_DETECTION', maxResults: 20 }]
-              }]
-            })
+          const response = await fetch(`https://api.imagga.com/v2/tags?image_base64=${base64}`, {
+            headers: { 'Authorization': 'Basic ' + btoa(API_KEY + ':' + API_SECRET) }
           });
 
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
           const data = await response.json();
-          const labels = (data.responses[0]?.labelAnnotations || [])
-            .map(l => l.description.toLowerCase())
-            .filter(l => ['tomate', 'huevo', 'cebolla', 'leche', 'pollo', 'arroz', 'pasta', 'queso', 'pan', 'aceite', 'carne', 'verdura', 'fruta'].includes(l))
+          const tags = (data.result?.tags || [])
+            .map(t => t.tag.en.toLowerCase())
+            .filter(t => ['tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 'bread', 'oil'].includes(t))
             .slice(0, 5);
 
-          // MOSTRAR RESULTADO
           document.getElementById('loading').remove();
           const result = document.createElement('div');
-          result.innerHTML = `
-            <p style="margin-top:20px; font-weight:700; color:#228B22;">
-              ✅ Detecté: <strong>${labels.length > 0 ? labels.join(', ') : 'nada comestible 😅'}</strong>
-            </p>
-          `;
+          result.innerHTML = `<p style="margin-top:20px; font-weight:700; color:#228B22;">
+            Detecté: <strong>${tags.length > 0 ? tags.join(', ') : 'nada comestible'}</strong>
+          </p>`;
           document.querySelector('.container').appendChild(result);
 
         } catch (err) {
           document.getElementById('loading').remove();
           const error = document.createElement('p');
-          error.innerHTML = `❌ Error: ${err.message.includes('403') ? 'Clave inválida' : 'Sin conexión'}`;
+          error.innerHTML = `Error: ${err.message}`;
           error.style.color = 'red';
           document.querySelector('.container').appendChild(error);
         }
-        
+
       }, 3000);
-      
-    } catch(err) {
-      alert('❌ Cámara no disponible. Usa móvil + Chrome');
+
+    } catch (err) {
+      alert('Cámara no disponible. Usa móvil + Chrome');
     }
   }
 </script>
