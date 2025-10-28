@@ -72,7 +72,15 @@
 
 <script>
   let stream;
-  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE CON COMILLAS
+  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE
+
+  // LISTA COMPLETA DE ALIMENTOS (en inglés, como los detecta Google)
+  const FOOD_ENGLISH = [
+    'tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 
+    'bread', 'oil', 'potato', 'carrot', 'apple', 'banana', 'orange', 
+    'pepper', 'bell pepper', 'lettuce', 'cucumber', 'garlic', 'beef', 
+    'pork', 'fish', 'salmon', 'yogurt', 'butter', 'avocado', 'lemon'
+  ];
 
   async function openCamera() {
     try {
@@ -112,7 +120,7 @@
             body: JSON.stringify({
               requests: [{
                 image: { content: base64 },
-                features: [{ type: 'LABEL_DETECTION', maxResults: 20 }]
+                features: [{ type: 'LABEL_DETECTION', maxResults: 30 }]
               }]
             })
           });
@@ -120,17 +128,32 @@
           const data = await response.json();
           const labels = (data.responses[0]?.labelAnnotations || [])
             .map(l => l.description.toLowerCase())
-            .filter(l => ['tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 'bread', 'oil'].includes(l))
-            .slice(0, 5);
+            .filter(l => FOOD_ENGLISH.includes(l))
+            .slice(0, 6);
 
           document.getElementById('loading').remove();
-          const result = document.createElement('div');
-          result.innerHTML = `
-            <p style="margin-top:20px; font-weight:700; color:#228B22;">
-              Detecté: <strong>${labels.length > 0 ? labels.join(', ') : 'nada comestible'}</strong>
-            </p>
-          `;
-          document.querySelector('.container').appendChild(result);
+          
+          if (labels.length > 0) {
+            const result = document.createElement('div');
+            result.innerHTML = `
+              <p style="margin-top:20px; font-weight:700; color:#228B22;">
+                Detecté: <strong>${labels.join(', ')}</strong>
+              </p>
+              <p style="margin-top:10px; color:#006400; font-size:0.9rem;">
+                Prueba con: pimiento, manzana, zanahoria, huevo...
+              </p>
+            `;
+            document.querySelector('.container').appendChild(result);
+          } else {
+            const result = document.createElement('div');
+            result.innerHTML = `
+              <p style="margin-top:20px; color:#DAA520;">
+                No detecté alimentos conocidos 😅<br>
+                <small>Prueba con buena luz y fondo limpio</small>
+              </p>
+            `;
+            document.querySelector('.container').appendChild(result);
+          }
 
         } catch (err) {
           document.getElementById('loading').remove();
@@ -143,7 +166,7 @@
       }, 3000);
 
     } catch (err) {
-      alert('Cámara no disponible');
+      alert('Cámara no disponible. Usa móvil + Chrome');
     }
   }
 </script>
