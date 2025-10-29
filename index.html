@@ -78,7 +78,7 @@
 
 <script>
   let stream;
-  
+  let ingredientsES = []; // ← ÚNICO Y GLOBAL
   // TUS CLAVES (PEGA AQUÍ)
   const GEMINI_API_KEY = 'AIzaSyC9PmhuhJLhl8Bf1yO5J0hQAJC4PJCjnlc'; // ← TU CLAVE GEMINI
   const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE SPOONACULAR (si la tienes)
@@ -103,7 +103,9 @@
 
         const loading = document.createElement('p');
         loading.id = 'loading';
-        loading.innerHTML = 'Analizando con Gemini...';
+        loading.innerHTML = '¡Plato<span style="color:#FF4500;">¡GO GO GO!</span>';
+loading.style.fontWeight = '700';
+loading.style.fontSize = '1.1em';
         loading.style.color = '#228B22';
         loading.style.marginTop = '20px';
         document.querySelector('.container').appendChild(loading);
@@ -250,8 +252,7 @@ async function suggestRecipe(ingredientsES) {
     alert('Error al buscar receta');
   }
 } 
-// === CHAT INTELIGENTE CON GEMINI ===
-let ingredientsES = []; // Se llenará después de detectar
+
 
 async function sendChat() {
   const input = document.getElementById('chat-input');
