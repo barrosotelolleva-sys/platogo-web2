@@ -81,23 +81,43 @@
   const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE
   const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE
 
-  // MAPA MÁS AMPLIO (incluye marcas, envases, etc.)
-  const FOOD_MAP = {
-    // ENVASES Y MARCAS
-    'milk': 'leche', 'milk carton': 'brik de leche', 'carton': 'brik', 'juice': 'zumo',
+  const FOOD_KEYWORDS = [
+    'bottle', 'botella', 'wine', 'vino', 'jar', 'frasco', 'package', 'envase', 
+    'carton', 'brik', 'milk carton', 'brik de leche', 'juice', 'zumo', 'can', 'lata',
+    'box', 'caja', 'bag', 'bolsa', 'container', 'recipiente',
+    'pascual', 'asturiana', 'central lechera', 'danone', 'nestle', 'kaiku', 
+    'president', 'la lechera', 'el pozo', 'campofrío', 'oscar mayer', 
+    'heinz', 'hellmanns', 'mahou', 'estrella galicia', 'san miguel',
+    'milk', 'leche', 'yogurt', 'yogur', 'cheese', 'queso', 'butter', 'mantequilla',
+    'cream', 'nata', 'yoghurt', 'yogourt',
+    'tomato', 'tomate', 'pepper', 'pimiento', 'bell pepper', 'apple', 'manzana',
+    'banana', 'plátano', 'orange', 'naranja', 'lemon', 'limón', 'grape', 'uva',
+    'strawberry', 'fresa', 'kiwi', 'melon', 'sandía', 'watermelon', 'pineapple', 'piña',
+    'onion', 'cebolla', 'garlic', 'ajo', 'potato', 'patata', 'carrot', 'zanahoria',
+    'lettuce', 'lechuga', 'cucumber', 'pepino', 'avocado', 'aguacate', 'broccoli', 'brócoli',
+    'spinach', 'espinacas', 'zucchini', 'calabacín',
+    'chicken', 'pollo', 'beef', 'carne', 'pork', 'cerdo', 'ham', 'jamón',
+    'sausage', 'salchicha', 'meat', 'fish', 'pescado', 'salmon', 'salmón',
+    'tuna', 'atún', 'cod', 'bacalao',
+    'rice', 'arroz', 'pasta', 'macarrones', 'spaghetti', 'bread', 'pan',
+    'oil', 'aceite', 'olive oil', 'aceite de oliva', 'flour', 'harina',
+    'sugar', 'azúcar', 'salt', 'sal', 'beans', 'alubias', 'lentils', 'lentejas',
+    'chickpea', 'garbanzo', 'jam', 'mermelada', 'honey', 'miel',
+    'sauce', 'salsa', 'ketchup', 'mayonnaise', 'mayonesa', 'mustard', 'mostaza',
+    'vinegar', 'vinagre', 'soy sauce', 'salsa de soja'
+  ];
+
+  // TRADUCCIÓN FINAL AL ESPAÑOL
+  const TRANSLATE = {
     'bottle': 'botella', 'wine': 'vino', 'jar': 'frasco', 'package': 'envase',
-    'yogur': 'yogur', 'yogurt': 'yogur', 'danone': 'yogur', 'nestle': 'leche',
-    'central lechera': 'leche', 'pascual': 'leche', 'asturiana': 'leche',
-    
-    // ALIMENTOS
+    'carton': 'brik', 'milk carton': 'brik de leche', 'juice': 'zumo',
+    'milk': 'leche', 'yogurt': 'yogur', 'cheese': 'queso', 'butter': 'mantequilla',
     'tomato': 'tomate', 'pepper': 'pimiento', 'bell pepper': 'pimiento',
     'apple': 'manzana', 'banana': 'plátano', 'orange': 'naranja', 'lemon': 'limón',
-    'onion': 'cebolla', 'garlic': 'ajo', 'potato': 'patata', 'carrot': 'zanahoria',
-    'lettuce': 'lechuga', 'cucumber': 'pepino', 'avocado': 'aguacate',
     'chicken': 'pollo', 'beef': 'carne', 'pork': 'cerdo', 'ham': 'jamón',
     'sausage': 'salchicha', 'meat': 'carne', 'fish': 'pescado',
     'rice': 'arroz', 'pasta': 'pasta', 'bread': 'pan', 'oil': 'aceite',
-    'jam': 'mermelada', 'sauce': 'salsa', 'ketchup': 'ketchup'
+    'jam': 'mermelada', 'sauce': 'salsa', 'ketchup': 'ketchup', 'mayonnaise': 'mayonesa'
   };
 
   async function openCamera() {
@@ -120,7 +140,7 @@
 
         const loading = document.createElement('p');
         loading.id = 'loading';
-        loading.innerHTML = 'Analizando nevera...';
+        loading.innerHTML = 'Analizando...';
         loading.style.color = '#228B22';
         loading.style.marginTop = '20px';
         document.querySelector('.container').appendChild(loading);
@@ -141,23 +161,16 @@
 
           const data = await response.json();
           const labels = (data.responses[0]?.labelAnnotations || [])
-            .filter(l => l.score > 0.5) // BAJAMOS A 0.5
-            .map(l => ({ text: l.description.toLowerCase(), score: l.score }));
+            .filter(l => l.score > 0.45) // CONFIDENCIA BAJA
+            .map(l => l.description.toLowerCase());
 
-          // DEBUG: MUESTRA TODO LO QUE VE GOOGLE
-          const debug = document.createElement('details');
-          debug.style.marginTop = '10px';
-          debug.style.fontSize = '0.8rem';
-          debug.innerHTML = `<summary>Ver debug (${labels.length} etiquetas)</summary><ul style="max-height:200px;overflow:auto;">` +
-            labels.map(l => `<li>${l.text} (${(l.score*100).toFixed(0)}%)</li>`).join('') +
-            `</ul>`;
-          document.querySelector('.container').appendChild(debug);
+          // FILTRA POR PALABRAS CLAVE
+          const detected = [...new Set(
+            labels.filter(word => FOOD_KEYWORDS.includes(word))
+          )];
 
-          const detectedSpanish = [...new Set(
-            labels
-              .filter(l => FOOD_MAP[l.text])
-              .map(l => FOOD_MAP[l.text])
-          )].slice(0, 10);
+          // TRADUCE AL ESPAÑOL
+          const detectedSpanish = detected.map(word => TRANSLATE[word] || word);
 
           document.getElementById('loading').remove();
 
@@ -183,7 +196,7 @@
             result.innerHTML = `
               <p style="margin-top:20px; color:#DAA520;">
                 No detecté alimentos 😅<br>
-                <small>Abre el debug para ver qué ve Google</small>
+                <small>Prueba con más luz o enfoca mejor</small>
               </p>
             `;
             document.querySelector('.container').appendChild(result);
@@ -201,7 +214,7 @@
     }
   }
 
-  // RECETA (sin cambios)
+  // RECETA (igual)
   async function suggestRecipe(ingredientsES) {
     const query = ingredientsES.join(',');
     const loading = document.createElement('p');
