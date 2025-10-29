@@ -81,22 +81,23 @@
   const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE
   const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE
 
+  // MAPA MÁS AMPLIO (incluye marcas, envases, etc.)
   const FOOD_MAP = {
-    // ENVASES
-    'bottle': 'botella', 'wine': 'vino', 'juice': 'zumo', 'carton': 'brik', 
-    'milk carton': 'brik de leche', 'jar': 'frasco', 'package': 'envase',
+    // ENVASES Y MARCAS
+    'milk': 'leche', 'milk carton': 'brik de leche', 'carton': 'brik', 'juice': 'zumo',
+    'bottle': 'botella', 'wine': 'vino', 'jar': 'frasco', 'package': 'envase',
+    'yogur': 'yogur', 'yogurt': 'yogur', 'danone': 'yogur', 'nestle': 'leche',
+    'central lechera': 'leche', 'pascual': 'leche', 'asturiana': 'leche',
     
     // ALIMENTOS
-    'milk': 'leche', 'yogurt': 'yogur', 'cheese': 'queso', 'butter': 'mantequilla',
-    'egg': 'huevo', 'chicken': 'pollo', 'beef': 'carne', 'pork': 'cerdo',
-    'ham': 'jamón', 'sausage': 'salchicha', 'meat': 'carne', 'fish': 'pescado',
     'tomato': 'tomate', 'pepper': 'pimiento', 'bell pepper': 'pimiento',
-    'onion': 'cebolla', 'garlic': 'ajo', 'potato': 'patata', 'carrot': 'zanahoria',
     'apple': 'manzana', 'banana': 'plátano', 'orange': 'naranja', 'lemon': 'limón',
+    'onion': 'cebolla', 'garlic': 'ajo', 'potato': 'patata', 'carrot': 'zanahoria',
     'lettuce': 'lechuga', 'cucumber': 'pepino', 'avocado': 'aguacate',
+    'chicken': 'pollo', 'beef': 'carne', 'pork': 'cerdo', 'ham': 'jamón',
+    'sausage': 'salchicha', 'meat': 'carne', 'fish': 'pescado',
     'rice': 'arroz', 'pasta': 'pasta', 'bread': 'pan', 'oil': 'aceite',
-    'beans': 'alubias', 'lentils': 'lentejas', 'chickpea': 'garbanzo',
-    'jam': 'mermelada', 'sauce': 'salsa', 'ketchup': 'ketchup', 'mayonnaise': 'mayonesa'
+    'jam': 'mermelada', 'sauce': 'salsa', 'ketchup': 'ketchup'
   };
 
   async function openCamera() {
@@ -139,16 +140,23 @@
           });
 
           const data = await response.json();
-
-          // FILTRA POR CONFIANZA ALTA
           const labels = (data.responses[0]?.labelAnnotations || [])
-            .filter(l => l.score > 0.6) // BAJAMOS A 0.6 PARA NEVERAS REALES
-            .map(l => l.description.toLowerCase());
+            .filter(l => l.score > 0.5) // BAJAMOS A 0.5
+            .map(l => ({ text: l.description.toLowerCase(), score: l.score }));
+
+          // DEBUG: MUESTRA TODO LO QUE VE GOOGLE
+          const debug = document.createElement('details');
+          debug.style.marginTop = '10px';
+          debug.style.fontSize = '0.8rem';
+          debug.innerHTML = `<summary>Ver debug (${labels.length} etiquetas)</summary><ul style="max-height:200px;overflow:auto;">` +
+            labels.map(l => `<li>${l.text} (${(l.score*100).toFixed(0)}%)</li>`).join('') +
+            `</ul>`;
+          document.querySelector('.container').appendChild(debug);
 
           const detectedSpanish = [...new Set(
             labels
-              .filter(tag => FOOD_MAP[tag])
-              .map(tag => FOOD_MAP[tag])
+              .filter(l => FOOD_MAP[l.text])
+              .map(l => FOOD_MAP[l.text])
           )].slice(0, 10);
 
           document.getElementById('loading').remove();
@@ -175,7 +183,7 @@
             result.innerHTML = `
               <p style="margin-top:20px; color:#DAA520;">
                 No detecté alimentos 😅<br>
-                <small>Enfoca mejor o prueba con más luz</small>
+                <small>Abre el debug para ver qué ve Google</small>
               </p>
             `;
             document.querySelector('.container').appendChild(result);
