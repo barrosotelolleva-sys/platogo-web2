@@ -166,7 +166,7 @@
             const result = document.createElement('div');
             result.innerHTML = `
               <p style="margin-top:20px; color:#DAA520;">
-                No detecté alimentos 😅<br>
+                No detecté alimentos<br>
                 <small>Prueba con más luz</small>
               </p>
             `;
@@ -207,8 +207,8 @@
         recipeDiv.style.marginTop = '20px';
         recipeDiv.style.padding = '15px';
         recipeDiv.style.background = '#fff';
-        recipeDiv.style.borderRadius = '15px';
-        recipeDiv.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+        recipeDiv.style.borderRadius = '15px';  // ← CORREGIDO
+        recipeDiv.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)'; // ← CORREGIDO
         recipeDiv.innerHTML = `
           <h3 style="color:#FF4500; margin-bottom:10px;">${r.title}</h3>
           <p><strong>Tiempo:</strong> ${r.readyInMinutes} min</p>
