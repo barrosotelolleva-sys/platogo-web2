@@ -78,9 +78,9 @@
 
 <script>
   let stream;
-  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE REAL AQUÍ
+  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE GOOGLE
+  const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE SPOONACULAR
 
-  // +30 ALIMENTOS + ENVASES
   const FOOD_ITEMS = [
     'tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 
     'bread', 'oil', 'potato', 'carrot', 'apple', 'banana', 'orange', 
@@ -147,9 +147,6 @@
               <p style="margin-top:20px; font-weight:700; color:#228B22; animation: pulse 1s;">
                 Detecté: <strong>${labels.join(', ')}</strong>
               </p>
-              <p style="margin-top:10px; color:#006400; font-size:0.9rem;">
-                ¡Toca "SUGERIR PLATO" para una receta!
-              </p>
             `;
             document.querySelector('.container').appendChild(result);
 
@@ -158,7 +155,7 @@
             recipeBtn.style.marginTop = '20px';
             recipeBtn.style.background = 'linear-gradient(45deg, #FF4500, #FF8C00)';
             recipeBtn.innerHTML = 'SUGERIR PLATO';
-            recipeBtn.onclick = () => alert('Receta en camino... ¡mañana con Spoonacular!');
+            recipeBtn.onclick = () => suggestRecipe(labels);
             document.querySelector('.container').appendChild(recipeBtn);
 
           } else {
@@ -184,6 +181,26 @@
 
     } catch (err) {
       alert('Cámara no disponible');
+    }
+  }
+
+  // RECETA CON SPOONACULAR
+  async function suggestRecipe(ingredients) {
+    const query = ingredients.join(',');
+    
+    try {
+      const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=1&apiKey=${SPOONACULAR_KEY}`);
+      const recipes = await response.json();
+      
+      if (recipes.length > 0) {
+        const r = recipes[0];
+        const missed = r.missedIngredients.map(i => i.name).join(', ') || 'ninguno';
+        alert(`¡Plato sugerido!\n\n${r.title}\n\nTiempo: ${r.readyInMinutes} min\nFaltan: ${missed}\n\n¡A cocinar!`);
+      } else {
+        alert('No encontré receta con eso 😅 Prueba con más ingredientes.');
+      }
+    } catch (err) {
+      alert('Error al buscar receta. Revisa tu clave de Spoonacular.');
     }
   }
 </script>
