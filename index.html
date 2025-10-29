@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>¡PLATOGO! - Foto → Plato</title>
+  <title>Plato¡GO! - Foto → Plato</title>
   <style>
+   @keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.camera-btn:active { transform: scale(0.95); } 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -60,7 +66,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>¡PLATOGO!</h1>
+    <h1>Plato¡GO!</h1>
     <p class="subtitle">Foto a la nevera → ¡Plato ya!</p>
     
     <button class="camera-btn" onclick="openCamera()">
@@ -72,14 +78,15 @@
 
 <script>
   let stream;
-  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE
+  const API_KEY = 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxx'; // ← TU CLAVE
 
-  // LISTA COMPLETA DE ALIMENTOS (en inglés, como los detecta Google)
-  const FOOD_ENGLISH = [
+  // ALIMENTOS + ENVASES (inglés)
+  const FOOD_ITEMS = [
     'tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 
     'bread', 'oil', 'potato', 'carrot', 'apple', 'banana', 'orange', 
     'pepper', 'bell pepper', 'lettuce', 'cucumber', 'garlic', 'beef', 
-    'pork', 'fish', 'salmon', 'yogurt', 'butter', 'avocado', 'lemon'
+    'pork', 'fish', 'yogurt', 'butter', 'avocado', 'lemon', 'jam', 
+    'sauce', 'jar', 'bottle', 'package', 'meat', 'ham', 'sausage'
   ];
 
   async function openCamera() {
@@ -106,9 +113,10 @@
 
         const loading = document.createElement('p');
         loading.id = 'loading';
-        loading.innerHTML = 'Analizando con Google Vision...';
+        loading.innerHTML = 'Analizando nevera...';
         loading.style.color = '#228B22';
         loading.style.marginTop = '20px';
+        loading.style.fontWeight = '700';
         document.querySelector('.container').appendChild(loading);
 
         const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
@@ -120,7 +128,7 @@
             body: JSON.stringify({
               requests: [{
                 image: { content: base64 },
-                features: [{ type: 'LABEL_DETECTION', maxResults: 30 }]
+                features: [{ type: 'LABEL_DETECTION', maxResults: 40 }]
               }]
             })
           });
@@ -128,28 +136,38 @@
           const data = await response.json();
           const labels = (data.responses[0]?.labelAnnotations || [])
             .map(l => l.description.toLowerCase())
-            .filter(l => FOOD_ENGLISH.includes(l))
-            .slice(0, 6);
+            .filter(l => FOOD_ITEMS.includes(l))
+            .slice(0, 8);
 
           document.getElementById('loading').remove();
           
           if (labels.length > 0) {
             const result = document.createElement('div');
             result.innerHTML = `
-              <p style="margin-top:20px; font-weight:700; color:#228B22;">
+              <p style="margin-top:20px; font-weight:700; color:#228B22; animation: pulse 1s;">
                 Detecté: <strong>${labels.join(', ')}</strong>
               </p>
               <p style="margin-top:10px; color:#006400; font-size:0.9rem;">
-                Prueba con: pimiento, manzana, zanahoria, huevo...
+                ¡Toca "SUGERIR PLATO" para una receta!
               </p>
             `;
             document.querySelector('.container').appendChild(result);
+
+            // BOTÓN RECETA
+            const recipeBtn = document.createElement('button');
+            recipeBtn.className = 'camera-btn';
+            recipeBtn.style.marginTop = '20px';
+            recipeBtn.style.background = 'linear-gradient(45deg, #FF4500, #FF8C00)';
+            recipeBtn.innerHTML = 'SUGERIR PLATO';
+            recipeBtn.onclick = () => suggestRecipe(labels);
+            document.querySelector('.container').appendChild(recipeBtn);
+
           } else {
             const result = document.createElement('div');
             result.innerHTML = `
               <p style="margin-top:20px; color:#DAA520;">
-                No detecté alimentos conocidos 😅<br>
-                <small>Prueba con buena luz y fondo limpio</small>
+                No detecté alimentos 😅<br>
+                <small>Prueba con luz y fondo limpio</small>
               </p>
             `;
             document.querySelector('.container').appendChild(result);
@@ -157,16 +175,33 @@
 
         } catch (err) {
           document.getElementById('loading').remove();
-          const error = document.createElement('p');
-          error.innerHTML = `Error: ${err.message}`;
-          error.style.color = 'red';
-          document.querySelector('.container').appendChild(error);
+          alert('Error de conexión. Revisa tu clave.');
         }
 
       }, 3000);
 
     } catch (err) {
-      alert('Cámara no disponible. Usa móvil + Chrome');
+      alert('Cámara no disponible');
+    }
+  }
+
+  // RECETA CON SPOONACULAR (GRATIS)
+  async function suggestRecipe(ingredients) {
+    const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← Regístrate en spoonacular.com
+    const query = ingredients.join(',');
+    
+    try {
+      const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=1&apiKey=${SPOONACULAR_KEY}`);
+      const recipes = await response.json();
+      
+      if (recipes.length > 0) {
+        const r = recipes[0];
+        alert(`¡Plato sugerido!\n\n${r.title}\n\nFaltan: ${r.missedIngredients.map(i => i.name).join(', ')}\n\n¡En ${r.readyInMinutes} min!`);
+      } else {
+        alert('No encontré receta con eso 😅 Prueba con más ingredientes.');
+      }
+    } catch (err) {
+      alert('Error al buscar receta');
     }
   }
 </script>
