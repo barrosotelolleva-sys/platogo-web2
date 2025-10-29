@@ -78,9 +78,7 @@
 
 <script>
   let stream;
-  
-  // TUS CLAVES (AQUÍ LAS PEGAS)
-  const GEMINI_API_KEY = 'AIzaSyC9PmhuhJLhl8Bf1yO5J0hQAJC4PJCjnlc'; // ← TU CLAVE GEMINI
+  const GEMINI_API_KEY = 'AIzaSyCy4VnPm60ZRFT0yRVT-qtGMrYy7dslCHY'; // ← TU NUEVA CLAVE
   const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE SPOONACULAR
 
   async function openCamera() {
@@ -111,14 +109,14 @@
         const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
 
         try {
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{
                 parts: [
                   {
-                    text: `Analiza esta foto de una nevera o despensa española. Detecta alimentos, envases, marcas. Lista en español: "leche, yogur Danone, tomate, pimiento, plátano, carne envasada, brik Pascual". Ignora estantes. Solo alimentos/envases. Formato: "Detecté: lista separada por comas"`
+                    text: "Analiza esta foto de nevera española. Detecta alimentos y envases. Responde solo: 'Detecté: lista en español separada por comas'."
                   },
                   {
                     inline_data: {
@@ -131,10 +129,15 @@
             })
           });
 
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+
           const data = await response.json();
           const analysis = data.candidates[0].content.parts[0].text;
 
-          // Extrae lista de ingredientes
+          // Extrae lista
           const detected = analysis.match(/Detecté: (.+)/)?.[1] || 'nada detectable';
           const ingredientsES = detected.split(',').map(i => i.trim()).filter(Boolean);
 
@@ -161,7 +164,7 @@
             const result = document.createElement('div');
             result.innerHTML = `
               <p style="margin-top:20px; color:#DAA520;">
-                No detecté alimentos<br>
+                No detecté alimentos 😅<br>
                 <small>Prueba con más luz</small>
               </p>
             `;
@@ -170,7 +173,7 @@
 
         } catch (err) {
           document.getElementById('loading').remove();
-          alert('Error en Gemini: revisa tu clave');
+          alert(`Error en Gemini: ${err.message}. Si es "403", espera 1 min o regenera clave.`);
           console.error(err);
         }
 
@@ -181,7 +184,7 @@
     }
   }
 
-  // RECETA (con Spoonacular)
+  // RECETA (igual)
   async function suggestRecipe(ingredientsES) {
     const query = ingredientsES.join(',');
     const loading = document.createElement('p');
