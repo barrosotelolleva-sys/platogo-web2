@@ -188,42 +188,59 @@
   }
 
   // RECETA CON SPOONACULAR
-  async function suggestRecipe(ingredientsES) {
-    const query = ingredientsES.join(',');
-    const loading = document.createElement('p');
-    loading.id = 'recipe-loading';
-    loading.innerHTML = 'Buscando receta...';
-    loading.style.color = '#FF4500';
-    document.querySelector('.container').appendChild(loading);
+ async function suggestRecipe(ingredientsES) {
+  const query = ingredientsES.join(',');
+  const loading = document.createElement('p');
+  loading.id = 'recipe-loading';
+  loading.innerHTML = 'Buscando recetas REALES con lo que tienes...';
+  loading.style.color = '#FF4500';
+  document.querySelector('.container').appendChild(loading);
 
-    try {
-      const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=1&apiKey=${SPOONACULAR_KEY}&language=es`);
-      const recipes = await response.json();
-      document.getElementById('recipe-loading').remove();
+  try {
+    const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=5&ranking=2&apiKey=${SPOONACULAR_KEY}&language=es`);
+    const recipes = await response.json();
+    document.getElementById('recipe-loading').remove();
 
-      if (recipes.length > 0) {
-        const r = recipes[0];
-        const missed = r.missedIngredients.map(i => i.name).join(', ') || 'ninguno';
-        const recipeDiv = document.createElement('div');
-        recipeDiv.style.marginTop = '20px';
-        recipeDiv.style.padding = '15px';
-        recipeDiv.style.background = '#fff';
-        recipeDiv.style.borderRadius = '15px';
-        recipeDiv.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
-        recipeDiv.innerHTML = `
-          <h3 style="color:#FF4500; margin-bottom:10px;">${r.title}</h3>
-          <p><strong>Tiempo:</strong> ${r.readyInMinutes} min</p>
-          <p><strong>Faltan:</strong> ${missed}</p>
+    const validRecipes = recipes.filter(r => r.missedIngredientCount <= 2);
+
+    if (validRecipes.length > 0) {
+      validRecipes.slice(0, 3).forEach(r => {
+        const missed = r.missedIngredients.map(i => i.name).join(', ') || 'nada';
+        const used = r.usedIngredients.map(i => i.name).join(', ');
+
+        const card = document.createElement('div');
+        card.style = 'margin:15px 0; padding:15px; background:#fff; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.1);';
+
+        let pregunta = '';
+        if (r.missedIngredientCount > 0) {
+          pregunta = `<p style="color:#DAA520; font-style:italic; margin-top:8px;">
+            ¿Tienes <strong>${missed}</strong>? Podríamos hacer esto...
+          </p>`;
+        }
+
+        card.innerHTML = `
+          <h4 style="color:#FF4500; margin:0 0 8px;">${r.title}</h4>
+          <p><strong>Usa:</strong> ${used}</p>
+          <p><strong>Faltan:</strong> ${missed || '¡nada!'}</p>
+          ${pregunta}
         `;
-        document.querySelector('.container').appendChild(recipeDiv);
-      } else {
-        alert('No encontré receta');
-      }
-    } catch (err) {
-      document.getElementById('recipe-loading')?.remove();
-      alert('Error al buscar receta');
+        document.querySelector('.container').appendChild(card);
+      });
+    } else {
+      const noRecipe = document.createElement('div');
+      noRecipe.innerHTML = `
+        <p style="color:#DAA520; font-weight:700;">
+          No encontré recetas con lo que tienes 😅<br>
+          <small>Pero puedes hacer: ensalada, macedonia, bocadillo...</small>
+        </p>
+      `;
+      document.querySelector('.container').appendChild(noRecipe);
     }
+  } catch (err) {
+    document.getElementById('recipe-loading')?.remove();
+    alert('Error al buscar receta');
   }
+} 
 </script>
 </body>
 </html>
