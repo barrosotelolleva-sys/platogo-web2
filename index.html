@@ -162,7 +162,9 @@
             recipeBtn.innerHTML = 'SUGERIR PLATO';
             recipeBtn.onclick = () => suggestRecipe(ingredientsES);
             document.querySelector('.container').appendChild(recipeBtn);
-
+// Mostrar chat después de detectar ingredientes
+ingredientsES = detected.split(',').map(i => i.trim()).filter(Boolean);
+showChat();
           } else {
             const result = document.createElement('div');
             result.innerHTML = `
@@ -247,6 +249,63 @@ async function suggestRecipe(ingredientsES) {
     alert('Error al buscar receta');
   }
 } 
+// === CHAT INTELIGENTE CON GEMINI ===
+let ingredientsES = []; // Se llenará después de detectar
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  addMessage(message, 'user');
+  input.value = '';
+
+  const context = `Ingredientes disponibles: ${ingredientsES.join(', ')}. `;
+  const prompt = `${context} El usuario dice: "${message}". Responde en español coloquial, corto, como un amigo en la cocina. Si pide "bocata", "ensalada", "macedonia", etc., da pasos simples. Si no sabes, di: "Con lo que tienes, mejor un bocata o una macedonia".`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await res.json();
+    const reply = data.candidates[0].content.parts[0].text.trim();
+    addMessage(reply, 'bot');
+  } catch {
+    addMessage("Uy, no te pillo... ¿quieres un bocata?", 'bot');
+  }
+}
+
+function addMessage(text, sender) {
+  const messages = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.style = sender === 'user' 
+    ? 'text-align:right; margin:8px 0;'
+    : 'text-align:left; margin:8px 0;';
+  div.innerHTML = `<span style="padding:10px 16px; border-radius:20px; display:inline-block; max-width:85%; font-size:0.95em; ${
+    sender === 'user' ? 'background:#FF4500; color:white;' : 'background:#e0e0e0; color:#333;'
+  }">${text}</span>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// Mostrar chat cuando haya ingredientes
+function showChat() {
+  document.getElementById('chat-container').style.display = 'block';
+  addMessage("¡Dime qué quieres hacer! Ej: bocata, macedonia, gazpacho...", 'bot');
+}
 </script>
+<!-- === CHAT DE RECETAS === -->
+<div id="chat-container" style="margin:30px 0 20px; display:none;">
+  <div id="chat-messages" style="height:220px; overflow-y:auto; padding:15px; background:#f9f9f9; border-radius:18px; margin-bottom:12px; font-family:system-ui;"></div>
+  <div style="display:flex; gap:8px;">
+    <input type="text" id="chat-input" placeholder="Pide tu receta: bocata, macedonia..." style="flex:1; padding:14px; border-radius:14px; border:1px solid #ddd; font-size:1em;">
+    <button onclick="sendChat()" style="padding:14px 18px; background:#FF4500; color:white; border:none; border-radius:14px; font-weight:700; cursor:pointer;">ENVIAR</button>
+  </div>
+</div>
+<!-- === FIN CHAT === -->
 </body>
 </html>
