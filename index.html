@@ -78,17 +78,17 @@
 
 <script>
   let stream;
-  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE GOOGLE
-  const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE SPOONACULAR
+  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE
+  const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE
 
   const FOOD_MAP = {
     // ENVASES
-    'bottle': 'botella', 'wine': 'vino', 'juice': 'zumo', 'carton': 'brik', 'milk carton': 'brik de leche',
-    'jar': 'frasco', 'package': 'envase', 'container': 'recipiente',
+    'bottle': 'botella', 'wine': 'vino', 'juice': 'zumo', 'carton': 'brik', 
+    'milk carton': 'brik de leche', 'jar': 'frasco', 'package': 'envase',
     
     // ALIMENTOS
     'milk': 'leche', 'yogurt': 'yogur', 'cheese': 'queso', 'butter': 'mantequilla',
-    'egg': 'huevo', 'chicken': 'pollo', 'beef': 'carne de res', 'pork': 'cerdo',
+    'egg': 'huevo', 'chicken': 'pollo', 'beef': 'carne', 'pork': 'cerdo',
     'ham': 'jamón', 'sausage': 'salchicha', 'meat': 'carne', 'fish': 'pescado',
     'tomato': 'tomate', 'pepper': 'pimiento', 'bell pepper': 'pimiento',
     'onion': 'cebolla', 'garlic': 'ajo', 'potato': 'patata', 'carrot': 'zanahoria',
@@ -133,26 +133,20 @@
             body: JSON.stringify({
               requests: [{
                 image: { content: base64 },
-                features: [
-                  { type: 'LABEL_DETECTION', maxResults: 50 },
-                  { type: 'OBJECT_LOCALIZATION', maxResults: 20 }
-                ]
+                features: [{ type: 'LABEL_DETECTION', maxResults: 100 }]
               }]
             })
           });
 
           const data = await response.json();
+
+          // FILTRA POR CONFIANZA ALTA
           const labels = (data.responses[0]?.labelAnnotations || [])
-            .filter(l => l.score > 0.7) // Solo alta confianza
+            .filter(l => l.score > 0.6) // BAJAMOS A 0.6 PARA NEVERAS REALES
             .map(l => l.description.toLowerCase());
 
-          const objects = (data.responses[0]?.localizedObjectAnnotations || [])
-            .filter(o => o.score > 0.7)
-            .map(o => o.name.toLowerCase());
-
-          const allTags = [...new Set([...labels, ...objects])];
           const detectedSpanish = [...new Set(
-            allTags
+            labels
               .filter(tag => FOOD_MAP[tag])
               .map(tag => FOOD_MAP[tag])
           )].slice(0, 10);
@@ -180,8 +174,8 @@
             const result = document.createElement('div');
             result.innerHTML = `
               <p style="margin-top:20px; color:#DAA520;">
-                Solo vi envases 😅<br>
-                <small>Apunta mejor a los alimentos</small>
+                No detecté alimentos 😅<br>
+                <small>Enfoca mejor o prueba con más luz</small>
               </p>
             `;
             document.querySelector('.container').appendChild(result);
@@ -189,7 +183,7 @@
 
         } catch (err) {
           document.getElementById('loading').remove();
-          alert('Error de conexión');
+          alert('Error: revisa tu clave de Google Vision');
         }
 
       }, 3000);
@@ -199,6 +193,7 @@
     }
   }
 
+  // RECETA (sin cambios)
   async function suggestRecipe(ingredientsES) {
     const query = ingredientsES.join(',');
     const loading = document.createElement('p');
@@ -228,7 +223,7 @@
         `;
         document.querySelector('.container').appendChild(recipeDiv);
       } else {
-        alert('No encontré receta con eso');
+        alert('No encontré receta');
       }
     } catch (err) {
       document.getElementById('recipe-loading')?.remove();
