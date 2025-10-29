@@ -188,50 +188,56 @@
   }
 
   // RECETA CON SPOONACULAR
- async function suggestRecipe(ingredientsES) {
+async function suggestRecipe(ingredientsES) {
   const query = ingredientsES.join(',');
   const loading = document.createElement('p');
   loading.id = 'recipe-loading';
-  loading.innerHTML = 'Buscando recetas REALES con lo que tienes...';
+  loading.innerHTML = 'Buscando recetas con lo que TÚ TIENES...';
   loading.style.color = '#FF4500';
   document.querySelector('.container').appendChild(loading);
 
   try {
-    const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=5&ranking=2&apiKey=${SPOONACULAR_KEY}&language=es`);
+    const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=6&ranking=2&ignorePantry=true&apiKey=${SPOONACULAR_KEY}&language=es`);
     const recipes = await response.json();
     document.getElementById('recipe-loading').remove();
 
-    const validRecipes = recipes.filter(r => r.missedIngredientCount <= 2);
+    // Filtra: solo recetas con 0 o 1 ingrediente faltante
+    const validRecipes = recipes.filter(r => r.missedIngredientCount <= 1);
 
     if (validRecipes.length > 0) {
-      validRecipes.slice(0, 3).forEach(r => {
+      for (const r of validRecipes.slice(0, 3)) {
         const missed = r.missedIngredients.map(i => i.name).join(', ') || 'nada';
         const used = r.usedIngredients.map(i => i.name).join(', ');
 
-        const card = document.createElement('div');
-        card.style = 'margin:15px 0; padding:15px; background:#fff; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.1);';
+        // Traduce título con Gemini
+        const tituloES = await traducirTitulo(r.title);
 
-        let pregunta = '';
-        if (r.missedIngredientCount > 0) {
-          pregunta = `<p style="color:#DAA520; font-style:italic; margin-top:8px;">
-            ¿Tienes <strong>${missed}</strong>? Podríamos hacer esto...
-          </p>`;
-        }
+        const card = document.createElement('div');
+        card.style = 'margin:15px 0; padding:18px; background:#fff; border-radius:18px; box-shadow:0 6px 20px rgba(0,0,0,0.12); font-family: system-ui;';
+
+        const pregunta = r.missedIngredientCount > 0
+          ? `<p style="color:#DAA520; font-weight:600; margin-top:10px; font-style:italic;">
+               ¿Tienes <strong>${missed}</strong>? ¡Vamos, que lo hacemos!
+             </p>`
+          : `<p style="color:#228B22; font-weight:700; margin-top:10px;">
+               ¡Tienes TODO! ¡A la sartén!
+             </p>`;
 
         card.innerHTML = `
-          <h4 style="color:#FF4500; margin:0 0 8px;">${r.title}</h4>
-          <p><strong>Usa:</strong> ${used}</p>
-          <p><strong>Faltan:</strong> ${missed || '¡nada!'}</p>
+          <h4 style="color:#FF4500; margin:0 0 10px; font-size:1.1em;">${tituloES}</h4>
+          <p style="margin:5px 0; color:#333;"><strong>Usa:</strong> ${used}</p>
+          <p style="margin:5px 0; color:#666;"><strong>Falta:</strong> ${missed || '¡nada!'}</p>
           ${pregunta}
         `;
         document.querySelector('.container').appendChild(card);
-      });
+      }
     } else {
       const noRecipe = document.createElement('div');
+      noRecipe.style = 'margin:20px 0; padding:15px; background:#fff; border-radius:15px; text-align:center;';
       noRecipe.innerHTML = `
-        <p style="color:#DAA520; font-weight:700;">
-          No encontré recetas con lo que tienes 😅<br>
-          <small>Pero puedes hacer: ensalada, macedonia, bocadillo...</small>
+        <p style="color:#DAA520; font-weight:700; margin:0;">
+          ¡No encontré receta perfecta! 😅<br>
+          <small style="color:#777;">Pero puedes hacer: <strong>macedonia, gazpacho, bocata...</strong></small>
         </p>
       `;
       document.querySelector('.container').appendChild(noRecipe);
