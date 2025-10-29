@@ -81,36 +81,21 @@
   const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE
   const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE
 
-  // TRADUCCIÓN AMPLIA (incluye TODO lo que ve Google)
+  // MAPA AMPLIO: TODO LO QUE GOOGLE PUEDE DECIR
   const TRANSLATE = {
-    // ENVASES
-    'bottle': 'botella', 'wine': 'vino', 'jar': 'frasco', 'package': 'envase',
-    'carton': 'brik', 'milk carton': 'brik de leche', 'juice': 'zumo',
-    'can': 'lata', 'box': 'caja', 'bag': 'bolsa', 'container': 'recipiente',
-    
-    // GENÉRICOS (Google los usa mucho)
+    // OBJETOS ESPECÍFICOS (OBJECT_LOCALIZATION)
+    'yogurt': 'yogur', 'yoghurt': 'yogur', 'milk': 'leche', 'cheese': 'queso',
+    'banana': 'plátano', 'apple': 'manzana', 'orange': 'naranja', 'tomato': 'tomate',
+    'pepper': 'pimiento', 'bell pepper': 'pimiento', 'lemon': 'limón',
+    'bottle': 'botella', 'wine bottle': 'vino', 'juice': 'zumo',
+    'carton': 'brik', 'milk carton': 'brik de leche', 'package': 'envase',
+    'jar': 'frasco', 'can': 'lata',
+
+    // GENÉRICOS (LABEL_DETECTION)
     'food': 'alimento', 'ingredient': 'ingrediente', 'produce': 'producto fresco',
     'fruit': 'fruta', 'vegetable': 'verdura', 'citrus': 'cítrico',
-    'shelf': 'estante', 'refrigerator': 'nevera', 'kitchen appliance': 'electrodoméstico',
-    
-    // FRUTAS
-    'orange': 'naranja', 'apple': 'manzana', 'banana': 'plátano', 'tomato': 'tomate',
-    'pepper': 'pimiento', 'lemon': 'limón', 'grape': 'uva', 'strawberry': 'fresa',
-    
-    // VERDURAS
-    'onion': 'cebolla', 'garlic': 'ajo', 'potato': 'patata', 'carrot': 'zanahoria',
-    'lettuce': 'lechuga', 'cucumber': 'pepino', 'avocado': 'aguacate',
-    
-    // LÁCTEOS
-    'milk': 'leche', 'yogurt': 'yogur', 'cheese': 'queso', 'butter': 'mantequilla',
-    
-    // CARNES
-    'chicken': 'pollo', 'beef': 'carne', 'pork': 'cerdo', 'ham': 'jamón',
-    'sausage': 'salchicha', 'meat': 'carne', 'fish': 'pescado',
-    
-    // DESPENSA
-    'rice': 'arroz', 'pasta': 'pasta', 'bread': 'pan', 'oil': 'aceite',
-    'jam': 'mermelada', 'sauce': 'salsa'
+    'refrigerator': 'nevera', 'shelf': 'estante', 'kitchen appliance': 'electrodoméstico',
+    'soft drink': 'refresco', 'dairy': 'lácteo', 'meat': 'carne'
   };
 
   async function openCamera() {
@@ -133,7 +118,7 @@
 
         const loading = document.createElement('p');
         loading.id = 'loading';
-        loading.innerHTML = 'Analizando...';
+        loading.innerHTML = 'Analizando nevera...';
         loading.style.color = '#228B22';
         loading.style.marginTop = '20px';
         document.querySelector('.container').appendChild(loading);
@@ -147,22 +132,36 @@
             body: JSON.stringify({
               requests: [{
                 image: { content: base64 },
-                features: [{ type: 'LABEL_DETECTION', maxResults: 100 }]
+                features: [
+                  { type: 'LABEL_DETECTION', maxResults: 100 },
+                  { type: 'OBJECT_LOCALIZATION', maxResults: 30 } // ← AÑADIDO
+                ]
               }]
             })
           });
 
           const data = await response.json();
-          const labels = (data.responses[0]?.labelAnnotations || [])
-            .filter(l => l.score > 0.4) // BAJAMOS A 0.4
+          const responseObj = data.responses[0];
+
+          // 1. LABELS (contexto general)
+          const labels = (responseObj.labelAnnotations || [])
+            .filter(l => l.score > 0.35)
             .map(l => l.description.toLowerCase());
 
-          // TRADUCE TODO
+          // 2. OBJETOS ESPECÍFICOS (lo que realmente hay)
+          const objects = (responseObj.localizedObjectAnnotations || [])
+            .filter(o => o.score > 0.35)
+            .map(o => o.name.toLowerCase());
+
+          // 3. COMBINAR TODO
+          const allDetected = [...new Set([...labels, ...objects])];
+
+          // 4. TRADUCIR
           const detectedSpanish = [...new Set(
-            labels
+            allDetected
               .map(word => TRANSLATE[word] || null)
               .filter(Boolean)
-          )].slice(0, 10);
+          )].slice(0, 12);
 
           document.getElementById('loading').remove();
 
@@ -188,7 +187,7 @@
             result.innerHTML = `
               <p style="margin-top:20px; color:#DAA520;">
                 No detecté alimentos 😅<br>
-                <small>Prueba con más luz</small>
+                <small>Prueba con más luz o enfoca mejor</small>
               </p>
             `;
             document.querySelector('.container').appendChild(result);
@@ -196,7 +195,8 @@
 
         } catch (err) {
           document.getElementById('loading').remove();
-          alert('Error: revisa tu clave');
+          alert('Error: revisa tu clave de Google Vision');
+          console.error(err);
         }
 
       }, 3000);
@@ -206,7 +206,7 @@
     }
   }
 
-  // RECETA (igual)
+  // RECETA (con idioma español)
   async function suggestRecipe(ingredientsES) {
     const query = ingredientsES.join(',');
     const loading = document.createElement('p');
