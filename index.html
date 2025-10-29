@@ -78,9 +78,9 @@
 
 <script>
   let stream;
-  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE
+  const API_KEY = 'AIzaSyDLtNNmcZnD8pymaAZqWA6wGjrMzhlVTpA'; // ← TU CLAVE REAL AQUÍ
 
-  // ALIMENTOS + ENVASES (inglés)
+  // +30 ALIMENTOS + ENVASES
   const FOOD_ITEMS = [
     'tomato', 'egg', 'onion', 'milk', 'chicken', 'rice', 'pasta', 'cheese', 
     'bread', 'oil', 'potato', 'carrot', 'apple', 'banana', 'orange', 
@@ -153,13 +153,12 @@
             `;
             document.querySelector('.container').appendChild(result);
 
-            // BOTÓN RECETA
             const recipeBtn = document.createElement('button');
             recipeBtn.className = 'camera-btn';
             recipeBtn.style.marginTop = '20px';
             recipeBtn.style.background = 'linear-gradient(45deg, #FF4500, #FF8C00)';
             recipeBtn.innerHTML = 'SUGERIR PLATO';
-            recipeBtn.onclick = () => suggestRecipe(labels);
+            recipeBtn.onclick = () => alert('Receta en camino... ¡mañana con Spoonacular!');
             document.querySelector('.container').appendChild(recipeBtn);
 
           } else {
@@ -175,33 +174,16 @@
 
         } catch (err) {
           document.getElementById('loading').remove();
-          alert('Error de conexión. Revisa tu clave.');
+          const error = document.createElement('p');
+          error.innerHTML = `Error: ${err.message}`;
+          error.style.color = 'red';
+          document.querySelector('.container').appendChild(error);
         }
 
       }, 3000);
 
     } catch (err) {
       alert('Cámara no disponible');
-    }
-  }
-
-  // RECETA CON SPOONACULAR (GRATIS)
-  async function suggestRecipe(ingredients) {
-    const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← Regístrate en spoonacular.com
-    const query = ingredients.join(',');
-    
-    try {
-      const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=1&apiKey=${SPOONACULAR_KEY}`);
-      const recipes = await response.json();
-      
-      if (recipes.length > 0) {
-        const r = recipes[0];
-        alert(`¡Plato sugerido!\n\n${r.title}\n\nFaltan: ${r.missedIngredients.map(i => i.name).join(', ')}\n\n¡En ${r.readyInMinutes} min!`);
-      } else {
-        alert('No encontré receta con eso 😅 Prueba con más ingredientes.');
-      }
-    } catch (err) {
-      alert('Error al buscar receta');
     }
   }
 </script>
