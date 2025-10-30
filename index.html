@@ -69,13 +69,13 @@
     <h1>Plato¡GO!</h1>
     <p class="subtitle">Foto a la nevera → ¡Plato ya!</p>
     
-    <button class="camera-btn" onclick="openCamera()">
-      TOMAR FOTO
-      </button>
-     <button class="camera-btn" onclick="openCamera('pantry')" style="margin-left:10px; background:linear-gradient(45deg, #8B4513, #D2691E);">
-      FOTO A LA DESPENSA 
-    </button>
-    
+    <div style="display:flex; gap:12px; justify-content:center; margin:20px 0;">
+  <button class="camera-btn" onclick="openCamera('fridge')" style="flex:1; background:linear-gradient(45deg, #00CED1, #20B2AA); color:white; border:none; padding:15px; border-radius:15px; font-weight:700; font-size:1.1em; cursor:pointer;">
+    FOTO NEVERA
+  </button>
+  <button class="camera-btn" onclick="openCamera('pantry')" style="flex:1; background:linear-gradient(45deg, #8B4513, #D2691E); color:white; border:none; padding:15px; border-radius:15px; font-weight:700; font-size:1.1em; cursor:pointer;">
+    FOTO DESPENSA
+  </button>
     <img id="preview" class="preview" style="display:none;">
   </div>
 
@@ -214,66 +214,37 @@ showChat();
     }
   }
 
-  // RECETA CON SPOONACULAR
-async function suggestRecipe(ingredientsES) {
-  const query = ingredientsES.join(',');
-  const loading = document.createElement('p');
-  loading.id = 'recipe-loading';
-  loading.innerHTML = 'Buscando recetas con lo que TÚ TIENES...';
-  loading.style.color = '#FF4500';
-  document.querySelector('.container').appendChild(loading);
+ async function suggestRecipe(ingredients) {
+  const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
+  const prompt = `
+Estás en la ${modo} con: ${ingredients.join(', ')}.
+Sugiere 1 receta corta, vacilona, en español de barrio.
+Usa SOLO lo que hay. Nada de inventar.
+Ejemplos:
+- despensa + pasta → "¡Pasta con tomate en lata! Hierve y a darle!"
+- nevera + tomate + pan → "¡Pan con tomate! Unta y a morder!"
+`.trim();
 
   try {
-    const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${query}&number=6&ranking=2&ignorePantry=true&apiKey=${SPOONACULAR_KEY}&language=es`);
-    const recipes = await response.json();
-    document.getElementById('recipe-loading').remove();
-
-    // Filtra: solo recetas con 0 o 1 ingrediente faltante
-    const validRecipes = recipes.filter(r => r.missedIngredientCount <= 1);
-
-    if (validRecipes.length > 0) {
-      for (const r of validRecipes.slice(0, 3)) {
-        const missed = r.missedIngredients.map(i => i.name).join(', ') || 'nada';
-        const used = r.usedIngredients.map(i => i.name).join(', ');
-
-        // Traduce título con Gemini
-        const tituloES = await traducirTitulo(r.title);
-
-        const card = document.createElement('div');
-        card.style = 'margin:15px 0; padding:18px; background:#fff; border-radius:18px; box-shadow:0 6px 20px rgba(0,0,0,0.12); font-family: system-ui;';
-
-        const pregunta = r.missedIngredientCount > 0
-          ? `<p style="color:#DAA520; font-weight:600; margin-top:10px; font-style:italic;">
-               ¿Tienes <strong>${missed}</strong>? ¡Vamos, que lo hacemos!
-             </p>`
-          : `<p style="color:#228B22; font-weight:700; margin-top:10px;">
-               ¡Tienes TODO! ¡A la sartén!
-             </p>`;
-
-        card.innerHTML = `
-          <h4 style="color:#FF4500; margin:0 0 10px; font-size:1.1em;">${tituloES}</h4>
-          <p style="margin:5px 0; color:#333;"><strong>Usa:</strong> ${used}</p>
-          <p style="margin:5px 0; color:#666;"><strong>Falta:</strong> ${missed || '¡nada!'}</p>
-          ${pregunta}
-        `;
-        document.querySelector('.container').appendChild(card);
-      }
-    } else {
-      const noRecipe = document.createElement('div');
-      noRecipe.style = 'margin:20px 0; padding:15px; background:#fff; border-radius:15px; text-align:center;';
-      noRecipe.innerHTML = `
-        <p style="color:#DAA520; font-weight:700; margin:0;">
-          ¡No encontré receta perfecta! 😅<br>
-          <small style="color:#777;">Pero puedes hacer: <strong>macedonia, gazpacho, bocata...</strong></small>
-        </p>
-      `;
-      document.querySelector('.container').appendChild(noRecipe);
-    }
-  } catch (err) {
-    document.getElementById('recipe-loading')?.remove();
-    alert('Error al buscar receta');
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    const data = await res.json();
+    const receta = data.candidates[0].content.parts[0].text.trim();
+    const noRecipe = document.createElement('div');
+    noRecipe.innerHTML = `
+      <p style="margin-top:20px; font-weight:700; color:#FF4500;">
+        ¡No encontré receta perfecta! 
+      </p>
+      <p style="font-size:0.9em;">Pero puedes hacer: <strong>${receta}</strong></p>
+    `;
+    document.querySelector('.container').appendChild(noRecipe);
+  } catch {
+    addMessage("¡Uy! No pillo... ¿pasta?", 'bot');
   }
-} 
+}
 
 
 async function sendChat() {
@@ -365,22 +336,22 @@ function addMessage(text, sender) {
 
 function showChat() {
   document.getElementById('chat-container').style.display = 'block';
-  addMessage("¡Dime qué quieres hacer! Ej: bocata, macedonia...", 'bot');
 
-  // Sugerencia automática
+  const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
+  addMessage(`¡Estoy en la ${modo}! ¿Qué quieres hacer con lo que tienes?`, 'bot');
+
+  // Sugerencia SEGÚN INGREDIENTES
   let sugerencia = '';
-  const tieneFruta = ingredientsES.some(i => ['plátano', 'manzana', 'pera', 'naranja', 'mandarina'].includes(i));
-  const tieneVerdura = ingredientsES.some(i => ['tomate', 'pimiento', 'cebolla', 'ajo'].includes(i));
-  const tienePan = ingredientsES.includes('pan') || ingredientsES.includes('pan de molde');
-
-  if (tienePan && tieneVerdura) {
-    sugerencia = '¿Bocata con tomate y pimiento?';
-  } else if (tieneFruta) {
-    sugerencia = '¿Macedonia con plátano y manzana?';
-  } else if (tieneVerdura) {
-    sugerencia = '¿Ensalada con tomate y pimiento?';
+  if (currentMode === 'pantry') {
+    if (ingredientsES.includes('pasta')) sugerencia = '¿Pasta con tomate en conserva?';
+    else if (ingredientsES.includes('arroz')) sugerencia = '¿Arroz tres delicias?';
+    else if (ingredientsES.some(i => i.includes('conserva'))) sugerencia = '¿Algo con lata?';
+    else sugerencia = '¿Qué te apetece?';
   } else {
-    sugerencia = '¿Qué te apetece?';
+    if (ingredientsES.includes('pan') && ingredientsES.includes('tomate')) sugerencia = '¿Bocata de tomate?';
+    else if (ingredientsES.some(i => ['plátano', 'manzana', 'naranja'].includes(i))) sugerencia = '¿Macedonia?';
+    else if (ingredientsES.includes('tomate') && ingredientsES.includes('cebolla')) sugerencia = '¿Gazpacho?';
+    else sugerencia = '¿Qué te apetece?';
   }
 
   setTimeout(() => addMessage(sugerencia, 'bot'), 1000);
