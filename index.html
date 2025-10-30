@@ -252,13 +252,8 @@ if (ingredientsES.length > 0) {
 // === FIN CHAT ===         
 // Mostrar chat después de detectar
 showChat();
-           const recipeBtn = document.createElement('button');
-recipeBtn.className = 'camera-btn';
-recipeBtn.textContent = 'SUGERIR PLATO';
 
-            recipeBtn.onclick = () => suggestRecipe(ingredientsES);
-            document.querySelector('.container').appendChild(recipeBtn);
-// Mostrar chat después de detectar ingredientes
+
 ingredientsES = detected.split(',').map(i => i.trim()).filter(Boolean);
 showChat();
           } else {
