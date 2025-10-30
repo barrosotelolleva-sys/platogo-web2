@@ -142,6 +142,14 @@ loading.style.fontSize = '1.1em';
           const data = await response.json();
           const analysis = data.candidates[0].content.parts[0].text;
 
+          // === LLENAR ingredientsES GLOBAL ===
+const detectedMatch = analysis.match(/Detecté: (.+)/);
+if (detectedMatch) {
+  ingredientsES = detectedMatch[1].split(',').map(i => i.trim().toLowerCase()).filter(Boolean);
+} else {
+  ingredientsES = [];
+}
+// === FIN LLENADO ===
           // Extrae lista
           const detected = analysis.match(/Detecté: (.+)/)?.[1] || 'nada detectable';
           const ingredientsES = detected.split(',').map(i => i.trim()).filter(Boolean);
@@ -156,6 +164,11 @@ loading.style.fontSize = '1.1em';
               </p>
             `;
             document.querySelector('.container').appendChild(result);
+   // === MOSTRAR CHAT DESPUÉS DE DETECTAR ===
+if (ingredientsES.length > 0) {
+  showChat();
+}
+// === FIN CHAT ===         
 // Mostrar chat después de detectar
 showChat();
             const recipeBtn = document.createElement('button');
@@ -177,6 +190,7 @@ showChat();
               </p>
             `;
             document.querySelector('.container').appendChild(result);
+            
           }
 
         } catch (err) {
@@ -256,23 +270,29 @@ async function suggestRecipe(ingredientsES) {
 
 async function sendChat() {
   const input = document.getElementById('chat-input');
-  const message = input.value.trim();
+  const message = input.value.trim().toLowerCase();
   if (!message) return;
 
   addMessage(message, 'user');
   input.value = '';
 
-  const context = `Ingredientes disponibles: ${ingredientsES.join(', ')}. `;
+  // Si no hay ingredientes, no responde
+  if (ingredientsES.length === 0) {
+    addMessage("Primero haz una foto a la nevera, ¡vamos!", 'bot');
+    return;
+  }
+
+  // Prompt ultra-claro
   const prompt = `
-Tienes estos ingredientes en la nevera: ${ingredientsES.join(', ')}.
+Tienes ESTOS ingredientes EXACTOS (nada más): ${ingredientsES.join(', ')}.
 El usuario dice: "${message}".
-Responde SOLO con una receta corta, coloquial, en español de barrio, como un amigo cocinando.
-Usa SÓLO lo que tienes (nada de inventar).
-Si no sabes, di: "Con eso, mejor un bocata o una macedonia, ¡vamos!".
-NO repitas "bocata, gazpacho, macedonia" si no encaja.
-Ejemplos:
-- Si tiene tomate y pan → "¡Pan con tomate! Unta y a morder."
-- Si tiene yogur y fruta → "¡Tostadas con yogur y fruta! ¡Dulce y sano!"
+Responde SOLO con una receta corta, en español coloquial, como un amigo.
+Usa SÓLO lo que tienes. NO inventes.
+Si no puedes hacer nada, di: "Con eso, mejor una macedonia o un bocata simple".
+Ejemplos reales:
+- Si tiene "tomate" y "pan" → "¡Pan con tomate! Unta y a morder."
+- Si tiene "plátano", "manzana" → "¡Macedonia! Corta y mezcla."
+- Si no encaja → "Con eso, mejor un bocata o fruta directa."
 `.trim();
 
   try {
@@ -286,8 +306,9 @@ Ejemplos:
     const data = await res.json();
     const reply = data.candidates[0].content.parts[0].text.trim();
     addMessage(reply, 'bot');
-  } catch {
-    addMessage("Uy, no te pillo... ¿quieres un bocata?", 'bot');
+  } catch (err) {
+    addMessage("¡Uy! Error de red... ¿bocata?", 'bot');
+    console.error(err);
   }
 }
 
@@ -305,28 +326,45 @@ function addMessage(text, sender) {
 }
 
 // Mostrar chat cuando haya ingredientes
-function showChat() {
-  document.getElementById('chat-container').style.display = 'block';
-  addMessage("¡Dime qué quieres hacer! Ej: bocata, macedonia, gazpacho...", 'bot');
-}
-// Sugerencia automática según ingredientes
-let sugerencia = '';
-if (ingredientsES.includes('pan') && ingredientsES.some(i => ['tomate', 'cebolla', 'pimiento'].includes(i))) {
-  sugerencia = '¿Quieres un bocata?';
-} else if (ingredientsES.some(i => ['plátano', 'manzana', 'naranja', 'pera'].includes(i))) {
-  sugerencia = '¿Macedonia?';
-} else if (ingredientsES.includes('tomate') && ingredientsES.includes('cebolla')) {
-  sugerencia = '¿Gazpacho?';
-} else {
-  sugerencia = '¿Qué te apetece?';
+// === FUNCIÓN SHOWCHAT (AQUÍ) ===
+
+// === CHAT: addMessage + showChat (PEGAR AQUÍ) ===
+function addMessage(text, sender) {
+  const messages = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.style = sender === 'user' 
+    ? 'text-align:right; margin:8px 0;'
+    : 'text-align:left; margin:8px 0;';
+  div.innerHTML = `<span style="padding:10px 16px; border-radius:20px; display:inline-block; max-width:85%; font-size:0.95em; ${
+    sender === 'user' ? 'background:#FF4500; color:white;' : 'background:#e0e0e0; color:#333;'
+  }">${text}</span>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
 }
 
-setTimeout(() => addMessage(sugerencia, 'bot'), 800);
-// Llama a showChat() después de detectar
-// (añade esto en openCamera(), después de "const result = ...")
-if (ingredientsES.length > 0) {
-  showChat();
+function showChat() {
+  document.getElementById('chat-container').style.display = 'block';
+  addMessage("¡Dime qué quieres hacer! Ej: bocata, macedonia...", 'bot');
+
+  // Sugerencia automática
+  let sugerencia = '';
+  const tieneFruta = ingredientsES.some(i => ['plátano', 'manzana', 'pera', 'naranja', 'mandarina'].includes(i));
+  const tieneVerdura = ingredientsES.some(i => ['tomate', 'pimiento', 'cebolla', 'ajo'].includes(i));
+  const tienePan = ingredientsES.includes('pan') || ingredientsES.includes('pan de molde');
+
+  if (tienePan && tieneVerdura) {
+    sugerencia = '¿Bocata con tomate y pimiento?';
+  } else if (tieneFruta) {
+    sugerencia = '¿Macedonia con plátano y manzana?';
+  } else if (tieneVerdura) {
+    sugerencia = '¿Ensalada con tomate y pimiento?';
+  } else {
+    sugerencia = '¿Qué te apetece?';
+  }
+
+  setTimeout(() => addMessage(sugerencia, 'bot'), 1000);
 }
+// === FIN CHAT ===
 </script>
 
 </div>
