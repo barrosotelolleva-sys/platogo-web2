@@ -107,7 +107,7 @@
         img.src = canvas.toDataURL('image/jpeg');
         img.style.display = 'block';
         stream.getTracks().forEach(track => track.stop());
-        
+
         // === OCULTAR BOTONES DE CÁMARA ===
 document.querySelectorAll('.camera-btn').forEach(btn => {
   if (btn.textContent.includes('NEVERA') || btn.textContent.includes('DESPENSA')) {
@@ -140,22 +140,41 @@ loading.innerHTML = `
 `;
 document.querySelector('.container').appendChild(loading);
 
-// === BOTÓN SUGERIR PLATO: DEBAJO DE LA FOTO ===
+// === BOTÓN SUGERIR PLATO: NARANJA, DEBAJO, CON RULETA ===
 let recipeBtn = document.getElementById('suggest-btn');
-if (recipeBtn) recipeBtn.remove(); // Evita duplicados
+if (recipeBtn) recipeBtn.remove(); // Elimina duplicados
 
 recipeBtn = document.createElement('button');
 recipeBtn.id = 'suggest-btn';
 recipeBtn.textContent = 'SUGERIR PLATO';
-recipeBtn.className = 'camera-btn'; // ← Usa tu clase original
-recipeBtn.style.margin = '20px auto';
-recipeBtn.style.display = 'block';
-recipeBtn.style.width = 'fit-content';
-recipeBtn.style.fontWeight = '700';
-recipeBtn.onclick = () => suggestRecipe(ingredientsES);
+recipeBtn.style = `
+  display: block;
+  margin: 20px auto;
+  padding: 12px 28px;
+  background: linear-gradient(45deg, #FF4500, #FF8C00);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1.1em;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(255,69,0,0.4);
+  transition: all 0.2s;
+`;
+recipeBtn.onmouseover = () => recipeBtn.style.transform = 'scale(1.05)';
+recipeBtn.onmouseout = () => recipeBtn.style.transform = 'scale(1)';
+recipeBtn.onclick = () => {
+  // === MOSTRAR RULETA ===
+  recipeBtn.innerHTML = `<div style="display:inline-block; animation:spin 1s linear infinite; padding:5px;">Pensando...</div>`;
+  recipeBtn.disabled = true;
+  suggestRecipe(ingredientsES).finally(() => {
+    recipeBtn.innerHTML = 'SUGERIR PLATO';
+    recipeBtn.disabled = false;
+  });
+};
 
 document.querySelector('.container').appendChild(recipeBtn);
-// === FIN BOTÓN ===
+
 // === AÑADE ESTO AL FINAL DEL <script> (UNA VEZ) ===
 if (!document.getElementById('platogo-spin')) {
   const style = document.createElement('style');
@@ -424,19 +443,12 @@ function showChat() {
   setTimeout(() => addMessage(sugerencia, 'bot'), 1000);
 }
 // === FIN CHAT ===
-// === FUNCIÓN SUGERIR PLATO (VACILONA Y RÁPIDA) ===
+// === SUGERIR PLATO: VACILONA, RÁPIDA Y CON RULETA EN EL BOTÓN ===
 async function suggestRecipe(ingredients) {
   if (!ingredients || ingredients.length === 0) {
     addMessage("¡No pillé nada! Haz otra foto, crack.", 'bot');
     return;
   }
-
-  // === MOSTRAR RULETA MIENTRAS PIENSA ===
-  const thinking = document.createElement('div');
-  thinking.id = 'thinking';
-  thinking.style = 'text-align:center; margin:15px 0; font-weight:700; color:#FF4500;';
-  thinking.innerHTML = `<div style="display:inline-block; animation:spin 1s linear infinite;">Pensando...</div>`;
-  document.querySelector('.container').appendChild(thinking);
 
   const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
   const prompt = `
@@ -444,7 +456,7 @@ Estás en la ${modo} con: ${ingredients.join(', ')}.
 Sugiere 1 receta corta y vacilona en español de barrio.
 Usa SOLO lo que hay. Nada de inventar.
 Ejemplos:
-- pasta, tomate → "¡Pasta con tomate en lata! Hierve y a darle!"
+- pasta, tomate en conserva → "¡Pasta con tomate en lata! Hierve y a zampar!"
 - pan, tomate → "¡Pan con tomate! Unta y a morder, crack!"
 `.trim();
 
@@ -452,20 +464,13 @@ Ejemplos:
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
     const data = await res.json();
     const receta = data.candidates[0].content.parts[0].text.trim();
-
-    // === QUITAR RULETA ===
-    document.getElementById('thinking')?.remove();
-
-    // === MOSTRAR RECETA ===
     addMessage(receta, 'bot');
   } catch (err) {
-    document.getElementById('thinking')?.remove();
+    console.error("Error en sugerir plato:", err);
     addMessage("¡Uy! No pillo... ¿pasta?", 'bot');
   }
 }
