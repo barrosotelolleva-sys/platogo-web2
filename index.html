@@ -206,6 +206,7 @@ if (detectedMatch) {
 } else {
   ingredientsES = [];
 }
+console.log("INGREDIENTES DETECTADOS:", ingredientsES); // ← AQUÍ
 // === FIN LLENADO ===
           
           document.getElementById('loading').remove();
@@ -416,7 +417,54 @@ function showChat() {
   setTimeout(() => addMessage(sugerencia, 'bot'), 1000);
 }
 // === FIN CHAT ===
+// === FUNCIÓN SUGERIR PLATO (VACILONA Y RÁPIDA) ===
+async function suggestRecipe(ingredients) {
+  if (!ingredients || ingredients.length === 0) {
+    addMessage("¡No pillé nada! Haz otra foto, crack.", 'bot');
+    return;
+  }
+
+  // === MOSTRAR RULETA MIENTRAS PIENSA ===
+  const thinking = document.createElement('div');
+  thinking.id = 'thinking';
+  thinking.style = 'text-align:center; margin:15px 0; font-weight:700; color:#FF4500;';
+  thinking.innerHTML = `<div style="display:inline-block; animation:spin 1s linear infinite;">Pensando...</div>`;
+  document.querySelector('.container').appendChild(thinking);
+
+  const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
+  const prompt = `
+Estás en la ${modo} con: ${ingredients.join(', ')}.
+Sugiere 1 receta corta y vacilona en español de barrio.
+Usa SOLO lo que hay. Nada de inventar.
+Ejemplos:
+- pasta, tomate → "¡Pasta con tomate en lata! Hierve y a darle!"
+- pan, tomate → "¡Pan con tomate! Unta y a morder, crack!"
+`.trim();
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await res.json();
+    const receta = data.candidates[0].content.parts[0].text.trim();
+
+    // === QUITAR RULETA ===
+    document.getElementById('thinking')?.remove();
+
+    // === MOSTRAR RECETA ===
+    addMessage(receta, 'bot');
+  } catch (err) {
+    document.getElementById('thinking')?.remove();
+    addMessage("¡Uy! No pillo... ¿pasta?", 'bot');
+  }
+}
+// === FIN SUGERIR PLATO ===
 </script>
+
 
 </div>
 <!-- === CHAT DE RECETAS (AQUÍ) === -->
