@@ -263,7 +263,17 @@ async function sendChat() {
   input.value = '';
 
   const context = `Ingredientes disponibles: ${ingredientsES.join(', ')}. `;
-  const prompt = `${context} El usuario dice: "${message}". Responde en español coloquial, corto, como un amigo en la cocina. Si pide "bocata", "ensalada", "macedonia", etc., da pasos simples. Si no sabes, di: "Con lo que tienes, mejor un bocata o una macedonia".`;
+  const prompt = `
+Tienes estos ingredientes en la nevera: ${ingredientsES.join(', ')}.
+El usuario dice: "${message}".
+Responde SOLO con una receta corta, coloquial, en español de barrio, como un amigo cocinando.
+Usa SÓLO lo que tienes (nada de inventar).
+Si no sabes, di: "Con eso, mejor un bocata o una macedonia, ¡vamos!".
+NO repitas "bocata, gazpacho, macedonia" si no encaja.
+Ejemplos:
+- Si tiene tomate y pan → "¡Pan con tomate! Unta y a morder."
+- Si tiene yogur y fruta → "¡Tostadas con yogur y fruta! ¡Dulce y sano!"
+`.trim();
 
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -299,6 +309,19 @@ function showChat() {
   document.getElementById('chat-container').style.display = 'block';
   addMessage("¡Dime qué quieres hacer! Ej: bocata, macedonia, gazpacho...", 'bot');
 }
+// Sugerencia automática según ingredientes
+let sugerencia = '';
+if (ingredientsES.includes('pan') && ingredientsES.some(i => ['tomate', 'cebolla', 'pimiento'].includes(i))) {
+  sugerencia = '¿Quieres un bocata?';
+} else if (ingredientsES.some(i => ['plátano', 'manzana', 'naranja', 'pera'].includes(i))) {
+  sugerencia = '¿Macedonia?';
+} else if (ingredientsES.includes('tomate') && ingredientsES.includes('cebolla')) {
+  sugerencia = '¿Gazpacho?';
+} else {
+  sugerencia = '¿Qué te apetece?';
+}
+
+setTimeout(() => addMessage(sugerencia, 'bot'), 800);
 // Llama a showChat() después de detectar
 // (añade esto en openCamera(), después de "const result = ...")
 if (ingredientsES.length > 0) {
