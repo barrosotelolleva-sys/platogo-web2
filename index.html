@@ -164,7 +164,13 @@ recipeBtn.style = `
 recipeBtn.onmouseover = () => recipeBtn.style.transform = 'scale(1.05)';
 recipeBtn.onmouseout = () => recipeBtn.style.transform = 'scale(1)';
 recipeBtn.onclick = () => {
-  // === MOSTRAR RULETA ===
+  console.log("BOTÓN CLICKADO");
+  console.log("INGREDIENTES DETECTADOS:", ingredientsES);
+  if (!ingredientsES || ingredientsES.length === 0) {
+    addMessage("¡No pillé ingredientes! Haz otra foto.", 'bot');
+    return;
+  }
+  // === RULETA ===
   recipeBtn.innerHTML = `<div style="display:inline-block; animation:spin 1s linear infinite; padding:5px;">Pensando...</div>`;
   recipeBtn.disabled = true;
   suggestRecipe(ingredientsES).finally(() => {
