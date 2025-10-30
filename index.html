@@ -106,16 +106,44 @@
         img.style.display = 'block';
         stream.getTracks().forEach(track => track.stop());
 
-        const loading = document.createElement('p');
-        
-        loading.id = 'loading';
-        loading.innerHTML = '¡Plato<span style="color:#FF4500;">¡GO GO GO!</span>';
-        loading.style.fontWeight = '700';
-        loading.style.fontSize = '1.1em';
-        loading.style.color = '#228B22';
-        loading.style.marginTop = '20px';
-        document.querySelector('.container').appendChild(loading);
+        // === RULETA ÉPICA: Plato¡GO GO GO! ===
+const loading = document.createElement('div');
+loading.id = 'loading';
+loading.style = `
+  text-align: center;
+  margin: 20px 0;
+  font-weight: 700;
+  color: #228B22;
+  font-size: 1.2em;
+`;
+loading.innerHTML = `
+  <div style="
+    display: inline-block;
+    animation: spin 1.2s linear infinite;
+    padding: 10px 20px;
+    background: #FF4500;
+    color: white;
+    border-radius: 30px;
+    box-shadow: 0 4px 10px rgba(255,69,0,0.4);
+  ">
+    Plato<span style="color:#FFD700;">¡GO GO GO!</span>
+  </div>
+`;
+document.querySelector('.container').appendChild(loading);
 
+// === AÑADE ESTO AL FINAL DEL <script> (UNA VEZ) ===
+if (!document.getElementById('platogo-spin')) {
+  const style = document.createElement('style');
+  style.id = 'platogo-spin';
+  style.innerHTML = `
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+}
+// === FIN RULETA ===
         // === AÑADE AQUÍ EL PROMPT DINÁMICO ===
       const promptText = mode === 'pantry' 
         ? "Analiza esta foto de despensa. Detecta arroz, pasta, legumbres, conservas, aceite, especias. Responde: 'Detecté: lista en español separada por comas'."
@@ -179,11 +207,24 @@ if (ingredientsES.length > 0) {
 // === FIN CHAT ===         
 // Mostrar chat después de detectar
 showChat();
-            const recipeBtn = document.createElement('button');
-            recipeBtn.className = 'camera-btn';
-            recipeBtn.style.marginTop = '20px';
-            recipeBtn.style.background = 'linear-gradient(45deg, #FF4500, #FF8C00)';
-            recipeBtn.innerHTML = 'SUGERIR PLATO';
+           const recipeBtn = document.createElement('button');
+recipeBtn.className = 'camera-btn';
+recipeBtn.textContent = 'SUGERIR PLATO';
+recipeBtn.style = `
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(45deg, #FF4500, #FF8C00);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9em;
+  cursor: pointer;
+  z-index: 10;
+`;
             recipeBtn.onclick = () => suggestRecipe(ingredientsES);
             document.querySelector('.container').appendChild(recipeBtn);
 // Mostrar chat después de detectar ingredientes
