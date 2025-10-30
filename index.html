@@ -283,10 +283,17 @@ async function sendChat() {
   const prompt = `
 Tienes ESTOS ingredientes EXACTOS (nada más): ${ingredientsES.join(', ')}.
 El usuario dice: "${message}".
-Responde SOLO con una receta corta, en español coloquial, como un amigo.
-Usa SÓLO lo que tienes. NO inventes.
+Responde COMO UN AMIGO DEL BARRIO: vacilón, directo, sin formalismos.
+Usa SÓLO lo que tienes. NO inventes. Nada de "proceda", "añada", "sirva".
 Si no puedes hacer nada, di: "Con eso, mejor una macedonia o un bocata simple".
 Ejemplos reales:
+- "¡Echa un chorro de aceite, que no somos pobres!"
+- "¡Corta todo como puedas, total se come igual!"
+- "¡Tíralo todo junto, remueve y a zampar!"
+- "¡No tienes pan? Pues fruta a mordiscos, ¡vamos!"
+- "Corta el tomate, mételo en el pan, ¡y a morder!"
+- "¡Tira todo en un bol, mézclalo y a disfrutar!"
+- "¡Con eso no se hace nada, pero un bocata nunca falla!"
 - Si tiene "tomate" y "pan" → "¡Pan con tomate! Unta y a morder."
 - Si tiene "plátano", "manzana" → "¡Macedonia! Corta y mezcla."
 - Si no encaja → "Con eso, mejor un bocata o fruta directa."
@@ -370,7 +377,7 @@ function showChat() {
   <div id="chat-messages" style="height:220px; overflow-y:auto; padding:15px; background:#f9f9f9; border-radius:18px; margin-bottom:12px; font-family:system-ui;"></div>
   <div style="display:flex; gap:8px;">
     <input type="text" id="chat-input" placeholder="Pide tu receta: bocata, macedonia..." style="flex:1; padding:14px; border-radius:14px; border:1px solid #ddd; font-size:1em;">
-    <button onclick="sendChat()" style="padding:14px 18px; background:#FF4500; color:white; border:none; border-radius:14px; font-weight:700; cursor:pointer;">ENVIAR</button>
+    <button onclick="sendChat()" style="padding:14px 18px; background:#FF4500; color:white; border:none; border-radius:14px; font-weight:700; cursor:pointer;">¡VAMOS!</button>
   </div>
 </div>
 <!-- === FIN CHAT === -->
