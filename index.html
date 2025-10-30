@@ -255,21 +255,7 @@ showChat();
            const recipeBtn = document.createElement('button');
 recipeBtn.className = 'camera-btn';
 recipeBtn.textContent = 'SUGERIR PLATO';
-recipeBtn.style = `
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(45deg, #FF4500, #FF8C00);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: 0.9em;
-  cursor: pointer;
-  z-index: 10;
-`;
+
             recipeBtn.onclick = () => suggestRecipe(ingredientsES);
             document.querySelector('.container').appendChild(recipeBtn);
 // Mostrar chat después de detectar ingredientes
