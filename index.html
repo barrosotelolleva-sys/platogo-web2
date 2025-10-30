@@ -139,21 +139,34 @@ loading.innerHTML = `
   </div>
 `;
 document.querySelector('.container').appendChild(loading);
-
-// === MODO DEBUG: SIMULA INGREDIENTES SI NO HAY CÁMARA ===
+// === MODO DEBUG: SIN CÁMARA EN PC ===
 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
   console.log("SIN CÁMARA → MODO DEBUG ACTIVADO");
   ingredientsES = ["arroz", "pasta", "tomate en conserva", "aceite"];
   addMessage("¡MODO DEBUG! Ingredientes: " + ingredientsES.join(', '), 'bot');
-  
-  // === CREAR BOTÓN NARANJA ===
+
+  // === CREAR BOTÓN NARANJA (DEBUG) ===
   let recipeBtn = document.getElementById('suggest-btn');
   if (recipeBtn) recipeBtn.remove();
 
   recipeBtn = document.createElement('button');
   recipeBtn.id = 'suggest-btn';
   recipeBtn.textContent = 'SUGERIR PLATO';
-  recipeBtn.style = 'display:block; margin:20px auto; padding:12px 28px; background:linear-gradient(45deg,#FF4500,#FF8C00); color:white; border:none; border-radius:30px; font-weight:700; font-size:1.1em; cursor:pointer; box-shadow:0 4px 10px rgba(255,69,0,0.4);';
+  recipeBtn.style = `
+    display: block;
+    margin: 20px auto;
+    padding: 12px 28px;
+    background: linear-gradient(45deg, #FF4500, #FF8C00);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(255,69,0,0.4);
+  `;
+  recipeBtn.onmouseover = () => recipeBtn.style.transform = 'scale(1.05)';
+  recipeBtn.onmouseout = () => recipeBtn.style.transform = 'scale(1)';
   recipeBtn.onclick = () => {
     console.log("BOTÓN CLICKADO (DEBUG)");
     recipeBtn.innerHTML = `<div style="display:inline-block; animation:spin 1s linear infinite; padding:5px;">Pensando...</div>`;
