@@ -430,47 +430,58 @@ function showChat() {
   setTimeout(() => addMessage(sugerencia, 'bot'), 1000);
 }
 // === FIN CHAT ===
-// === SUGERIR PLATO: VACILONA, RÁPIDA Y CON RULETA EN EL BOTÓN ===
+// === SUGERIR PLATO: DEBUG TOTAL + GEMINI OBEDECE ===
 async function suggestRecipe(ingredients) {
+  console.log("suggestRecipe() LLAMADO");
+  console.log("INGREDIENTES:", ingredients);
+
   if (!ingredients || ingredients.length === 0) {
     addMessage("¡No pillé nada! Haz otra foto, crack.", 'bot');
     return;
   }
 
   const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
-  const prompt = `
-Eres un cocinero de barrio con: ${ingredients.join(', ')} en la ${modo}.
-SOLO PUEDES USAR ESO. NADA MÁS.
-Sugiere 1 receta corta, vacilona, en español de barrio.
-Ejemplos:
-- pasta, tomate → "¡Pasta con tomate! Hierve y a zampar, crack!"
-- arroz, pollo → "¡Arroz con pollo! Saltea y a tragar!"
-NO inventes ingredientes. Si no hay nada, di: "¡Pilla algo, crack!"
-`.trim();
+  const lista = ingredients.join(', ');
+  const prompt = `SOLO tienes: ${lista}. NADA MÁS. En la ${modo}. 
+Sugiere 1 receta corta usando SOLO eso. En español de barrio. 
+Ejemplo: pasta, tomate → "¡Pasta con tomate! Hierve y a darle!"
+NO inventes. Si no hay combinación, di: "¡Pilla algo, crack!"`.trim();
+
+  console.log("PROMPT ENVIADO A GEMINI:", prompt);
 
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
+        contents: [{ parts: [{ text: prompt }] }],
+        safetySettings: [
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+        ]
       })
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    console.log("RESPUESTA HTTP:", res.status, res.statusText);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("ERROR API:", errorText);
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
 
     const data = await res.json();
-    const receta = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    console.log("DATA GEMINI:", data);
 
-    if (!receta) throw new Error("Sin receta");
+    const receta = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!receta) throw new Error("Sin receta en respuesta");
 
     addMessage(receta, 'bot');
   } catch (err) {
-    console.error("Error Gemini:", err);
+    console.error("ERROR FINAL:", err);
     addMessage("¡Uy! No pillo... ¿pasta?", 'bot');
   }
 }
-// === FIN SUGERIR PLATO ===
+
 // === FIN SUGERIR PLATO ===
 </script>
 
