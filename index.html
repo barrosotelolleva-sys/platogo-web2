@@ -62,11 +62,8 @@
       border-radius: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-  </style>
-  <style>
-  .container {
-    position: relative !important;
-  }
+  
+  
 </style>
 </head>
 <body>
@@ -136,6 +133,22 @@ loading.innerHTML = `
 `;
 document.querySelector('.container').appendChild(loading);
 
+// === BOTÓN SUGERIR PLATO: DEBAJO DE LA FOTO ===
+let recipeBtn = document.getElementById('suggest-btn');
+if (recipeBtn) recipeBtn.remove(); // Evita duplicados
+
+recipeBtn = document.createElement('button');
+recipeBtn.id = 'suggest-btn';
+recipeBtn.textContent = 'SUGERIR PLATO';
+recipeBtn.className = 'camera-btn'; // ← Usa tu clase original
+recipeBtn.style.margin = '20px auto';
+recipeBtn.style.display = 'block';
+recipeBtn.style.width = 'fit-content';
+recipeBtn.style.fontWeight = '700';
+recipeBtn.onclick = () => suggestRecipe(ingredientsES);
+
+document.querySelector('.container').appendChild(recipeBtn);
+// === FIN BOTÓN ===
 // === AÑADE ESTO AL FINAL DEL <script> (UNA VEZ) ===
 if (!document.getElementById('platogo-spin')) {
   const style = document.createElement('style');
