@@ -107,6 +107,13 @@
         img.src = canvas.toDataURL('image/jpeg');
         img.style.display = 'block';
         stream.getTracks().forEach(track => track.stop());
+        
+        // === OCULTAR BOTONES DE CÁMARA ===
+document.querySelectorAll('.camera-btn').forEach(btn => {
+  if (btn.textContent.includes('NEVERA') || btn.textContent.includes('DESPENSA')) {
+    btn.style.display = 'none';
+  }
+});
 
         // === RULETA ÉPICA: Plato¡GO GO GO! ===
 const loading = document.createElement('div');
