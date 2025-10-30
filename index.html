@@ -150,10 +150,7 @@ if (detectedMatch) {
   ingredientsES = [];
 }
 // === FIN LLENADO ===
-          // Extrae lista
-          const detected = analysis.match(/Detecté: (.+)/)?.[1] || 'nada detectable';
-          const ingredientsES = detected.split(',').map(i => i.trim()).filter(Boolean);
-
+          
           document.getElementById('loading').remove();
 
           if (ingredientsES.length > 0) {
