@@ -82,11 +82,13 @@
 <script>
   let stream;
   let ingredientsES = []; // ← ÚNICO Y GLOBAL
+  let currentMode = 'fridge'; // ← NUEVA: nevera o despensa
   // TUS CLAVES (PEGA AQUÍ)
   const GEMINI_API_KEY = 'AIzaSyC9PmhuhJLhl8Bf1yO5J0hQAJC4PJCjnlc'; // ← TU CLAVE GEMINI
   const SPOONACULAR_KEY = 'fb1bcb51f67e4c7d8d709f610c3254d1'; // ← TU CLAVE SPOONACULAR (si la tienes)
 
   async function openCamera(mode = 'fridge') {
+    currentMode = mode; // ← GUARDA: fridge o pantry
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       const video = document.createElement('video');
@@ -288,9 +290,11 @@ async function sendChat() {
     return;
   }
 
+  // === AÑADE ESTO ANTES DEL PROMPT ===
+const modoTexto = currentMode === 'pantry' ? 'despensa' : 'nevera';
   // Prompt ultra-claro
   const prompt = `
-Tienes ESTOS ingredientes EXACTOS (nada más): ${ingredientsES.join(', ')}.
+Estás en la ${modoTexto} con ESTOS ingredientes EXACTOS (nada más): ${ingredientsES.join(', ')}.
 El usuario dice: "${message}".
 Responde COMO UN AMIGO DEL BARRIO: vacilón, directo, sin formalismos.
 Usa SÓLO lo que tienes. NO inventes. Nada de "proceda", "añada", "sirva".
@@ -306,6 +310,10 @@ Ejemplos reales:
 - Si tiene "tomate" y "pan" → "¡Pan con tomate! Unta y a morder."
 - Si tiene "plátano", "manzana" → "¡Macedonia! Corta y mezcla."
 - Si no encaja → "Con eso, mejor un bocata o fruta directa."
+Si es despensa: pasta, arroz, conservas.
+Ejemplos:
+- "¡Tira fideos al agua, abre tomate en lata, mézclalo y a darle!"
+- "¡Con eso haces un arroz tres delicias fácil!"
 `.trim();
 
   try {
