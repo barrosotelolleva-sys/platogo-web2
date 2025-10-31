@@ -13,23 +13,24 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-.gender-btn {
-  margin: 4px;
-  padding: 10px 18px;
-  background: #FF4500;
-  color: white;
+.gender-big-btn {
+  margin: 10px;
+  padding: 16px 32px;
+  background: white;
+  color: #FF4500;
   border: none;
-  border-radius: 25px;
+  border-radius: 30px;
   font-weight: 700;
-  font-size: 0.9em;
+  font-size: 1.2em;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 120px;
 }
 
-.gender-btn:hover { transform: scale(1.05); }
+.gender-big-btn:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
-.gender-btn.female { background: #FF69B4; }
-.gender-btn.mix { background: #9C27B0; }
+.gender-big-btn.female { color: #FF69B4; }
+.gender-big-btn.mix { color: #9C27B0; }
 .camera-btn:active { transform: scale(0.95); } 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -581,40 +582,46 @@ NO inventes. Si no hay combinación, di: "¡Pilla algo, crack!"`.trim();
 function getWord(male, female) {
   return userGender === 'mujer' ? female : male;
 }
-// === PERSONALIZACIÓN DE GÉNERO: COLEGUÍN MODE ON (100% FUNCIONA) ===
+// === PREGUNTA DE GÉNERO: ENCIMA DE LOS BOTONES (ANTES DE FOTO) ===
 document.addEventListener('DOMContentLoaded', () => {
   const savedGender = localStorage.getItem('platogo_gender');
-  
-  // === SI NO HAY GÉNERO GUARDADO → PREGUNTAR ===
+
   if (!savedGender) {
-    const genderMsg = document.createElement('div');
-    genderMsg.className = 'message bot';
-    genderMsg.innerHTML = `
-      <strong>¡Ey, chef! 😎</strong><br>
-      ¿Eres más de <strong>crack</strong>, <strong>tía</strong> o <strong>mezcla</strong>?<br><br>
-      <button onclick="setGender('hombre')" class="gender-btn">CRACK</button>
-      <button onclick="setGender('mujer')" class="gender-btn female">TÍA</button>
-      <button onclick="setGender('mixto')" class="gender-btn mix">MEZCLA</button>
+    // === CREAR PANTALLA DE PREGUNTA ===
+    const genderOverlay = document.createElement('div');
+    genderOverlay.id = 'gender-overlay';
+    genderOverlay.style = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #FF4500, #FF8C00);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      color: white; font-family: sans-serif; text-align: center; z-index: 9999;
+      padding: 20px; box-sizing: border-box;
     `;
-    document.getElementById('chat-messages').appendChild(genderMsg);
-    scrollChat();
-  } else {
-    // === SI YA ELIGIÓ → SALUDO PERSONAL ===
-    addMessage(`¡Volviste, ${getSaludo()}! ¿Qué pillamos hoy? 😏`, 'bot');
+    genderOverlay.innerHTML = `
+      <h1 style="font-size: 2.2em; margin-bottom: 10px;">¡Ey, chef! 😎</h1>
+      <p style="font-size: 1.2em; margin-bottom: 30px;">¿Eres más de <strong>crack</strong>, <strong>tía</strong> o <strong>mezcla</strong>?</p>
+      <div>
+        <button onclick="saveGender('hombre')" class="gender-big-btn">CRACK</button>
+        <button onclick="saveGender('mujer')" class="gender-big-btn female">TÍA</button>
+        <button onclick="saveGender('mixto')" class="gender-big-btn mix">MEZCLA</button>
+      </div>
+    `;
+    document.body.appendChild(genderOverlay);
   }
 });
 
-// === GUARDAR GÉNERO ===
-function setGender(g) {
+// === GUARDAR GÉNERO Y QUITAR PANTALLA ===
+function saveGender(g) {
   localStorage.setItem('platogo_gender', g);
-  document.getElementById('chat-messages').innerHTML = '';
-  
-  const confirmMsg = g === 'hombre' ? '¡Crack detectado! 🔥' :
-                    g === 'mujer' ? '¡Tía en la cocina! 💅' :
-                    '¡Mezcla total, vamos a romperla! 🌈';
-  
-  addMessage(confirmMsg, 'bot');
-  addMessage('¡Ahora haz una foto y te digo qué cocinar!', 'bot');
+  const overlay = document.getElementById('gender-overlay');
+  if (overlay) overlay.remove();
+
+  // Mensaje de bienvenida en el chat
+  const welcome = g === 'hombre' ? '¡Crack en la cocina! 🔥' :
+                 g === 'mujer' ? '¡Tía al mando! 💅' :
+                 '¡Mezcla total, vamos a romperla! 🌈';
+  addMessage(welcome, 'bot');
+  addMessage('¡Haz una foto y te digo qué cocinar!', 'bot');
 }
 
 // === OBTENER SALUDO ===
