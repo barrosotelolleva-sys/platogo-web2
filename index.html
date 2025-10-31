@@ -10,6 +10,9 @@
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
 }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 .camera-btn:active { transform: scale(0.95); } 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -79,6 +82,22 @@
     FOTO DESPENSA
   </button>
     <img id="preview" class="preview" style="display:none;">
+    // === MENSAJE DE ESPERA DEBAJO DEL BOTÓN ===
+const waitMsg = document.createElement('div');
+waitMsg.id = 'wait-msg';
+waitMsg.innerHTML = `
+  <small style="color:#666; font-size:0.8em; display:block; margin-top:8px; text-align:center;">
+    <span class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid #ccc; border-top:2px solid #FF4500; border-radius:50%; animation:spin 1s linear infinite; margin-right:5px;"></span>
+    Pulsa y espera 3 segundos...
+  </small>
+`;
+document.querySelector('.container').appendChild(waitMsg);
+
+// === QUITAR MENSAJE CUANDO TERMINE ===
+setTimeout(() => {
+  const msg = document.getElementById('wait-msg');
+  if (msg) msg.remove();
+}, 5000); // desaparece en 5 seg
   </div>
 
 <script>
@@ -476,7 +495,7 @@ async function suggestRecipe(ingredients) {
   console.log("INGREDIENTES:", ingredients);
 
   if (!ingredients || ingredients.length === 0) {
-    addMessage("¡No pillé nada! Haz otra foto, crack.", 'bot');
+    addMessage`¡Pasta con tomate! Hierve y a zampar, ${getWord('crack', 'tía')}!`
     return;
   }
 
@@ -535,6 +554,37 @@ NO inventes. Si no hay combinación, di: "¡Pilla algo, crack!"`.trim();
     }
   });
 
+// === DETECTAR GÉNERO AL INICIAR ===
+let userGender = localStorage.getItem('platogo_gender') || null;
+
+if (!userGender) {
+  const genderPrompt = document.createElement('div');
+  genderPrompt.style = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; font-family:sans-serif;';
+  genderPrompt.innerHTML = `
+    <h2 style="margin-bottom:20px;">¡Hola, chef!</h2>
+    <p style="margin-bottom:20px;">¿Eres hombre o mujer?</p>
+    <button id="btn-male" style="margin:5px; padding:12px 24px; background:#FF4500; color:white; border:none; border-radius:25px; font-weight:700;">Hombre</button>
+    <button id="btn-female" style="margin:5px; padding:12px 24px; background:#FF69B4; color:white; border:none; border-radius:25px; font-weight:700;">Mujer</button>
+  `;
+  document.body.appendChild(genderPrompt);
+
+  document.getElementById('btn-male').onclick = () => {
+    userGender = 'hombre';
+    localStorage.setItem('platogo_gender', 'hombre');
+    genderPrompt.remove();
+  };
+
+  document.getElementById('btn-female').onclick = () => {
+    userGender = 'mujer';
+    localStorage.setItem('platogo_gender', 'mujer');
+    genderPrompt.remove();
+  };
+}
+
+// === FUNCIÓN PARA PALABRAS SEGÚN GÉNERO ===
+function getWord(male, female) {
+  return userGender === 'mujer' ? female : male;
+}
 </script>
 
 
