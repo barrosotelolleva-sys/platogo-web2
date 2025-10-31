@@ -581,12 +581,12 @@ NO inventes. Si no hay combinación, di: "¡Pilla algo, crack!"`.trim();
 function getWord(male, female) {
   return userGender === 'mujer' ? female : male;
 }
-// === PERSONALIZACIÓN DE GÉNERO: COLEGUÍN MODE ON ===
-let userGender = localStorage.getItem('platogo_gender');
-
-window.addEventListener('load', () => {
-  if (!userGender) {
-    // === PRIMER MENSAJE EN CHAT: PREGUNTA GÉNERO ===
+// === PERSONALIZACIÓN DE GÉNERO: COLEGUÍN MODE ON (100% FUNCIONA) ===
+document.addEventListener('DOMContentLoaded', () => {
+  const savedGender = localStorage.getItem('platogo_gender');
+  
+  // === SI NO HAY GÉNERO GUARDADO → PREGUNTAR ===
+  if (!savedGender) {
     const genderMsg = document.createElement('div');
     genderMsg.className = 'message bot';
     genderMsg.innerHTML = `
@@ -599,20 +599,16 @@ window.addEventListener('load', () => {
     document.getElementById('chat-messages').appendChild(genderMsg);
     scrollChat();
   } else {
-    // === SALUDO PERSONAL SI YA ELIGIÓ ===
+    // === SI YA ELIGIÓ → SALUDO PERSONAL ===
     addMessage(`¡Volviste, ${getSaludo()}! ¿Qué pillamos hoy? 😏`, 'bot');
   }
 });
 
-// === GUARDAR GÉNERO Y CONTINUAR ===
+// === GUARDAR GÉNERO ===
 function setGender(g) {
-  userGender = g;
   localStorage.setItem('platogo_gender', g);
-  
-  // Limpiar pregunta
   document.getElementById('chat-messages').innerHTML = '';
   
-  // Mensaje de confirmación vacilón
   const confirmMsg = g === 'hombre' ? '¡Crack detectado! 🔥' :
                     g === 'mujer' ? '¡Tía en la cocina! 💅' :
                     '¡Mezcla total, vamos a romperla! 🌈';
@@ -621,11 +617,19 @@ function setGender(g) {
   addMessage('¡Ahora haz una foto y te digo qué cocinar!', 'bot');
 }
 
-// === OBTENER SALUDO SEGÚN GÉNERO ===
+// === OBTENER SALUDO ===
 function getSaludo() {
-  if (userGender === 'mujer') return 'tía';
-  if (userGender === 'hombre') return 'crack';
+  const g = localStorage.getItem('platogo_gender');
+  if (g === 'mujer') return 'tía';
+  if (g === 'hombre') return 'crack';
   return 'crack o tía';
+}
+// === SCROLL AL FINAL DEL CHAT (ALWAYS VISIBLE) ===
+function scrollChat() {
+  const chat = document.getElementById('chat-messages');
+  if (chat) {
+    chat.scrollTop = chat.scrollHeight;
+  }
 }
 </script>
 
