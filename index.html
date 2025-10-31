@@ -82,22 +82,7 @@
     FOTO DESPENSA
   </button>
     <img id="preview" class="preview" style="display:none;">
-    // === MENSAJE DE ESPERA DEBAJO DEL BOTÓN ===
-const waitMsg = document.createElement('div');
-waitMsg.id = 'wait-msg';
-waitMsg.innerHTML = `
-  <small style="color:#666; font-size:0.8em; display:block; margin-top:8px; text-align:center;">
-    <span class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid #ccc; border-top:2px solid #FF4500; border-radius:50%; animation:spin 1s linear infinite; margin-right:5px;"></span>
-    Pulsa y espera 3 segundos...
-  </small>
-`;
-document.querySelector('.container').appendChild(waitMsg);
-
-// === QUITAR MENSAJE CUANDO TERMINE ===
-setTimeout(() => {
-  const msg = document.getElementById('wait-msg');
-  if (msg) msg.remove();
-}, 5000); // desaparece en 5 seg
+   
   </div>
 
 <script>
@@ -110,6 +95,22 @@ setTimeout(() => {
 
   async function openCamera(mode = 'fridge') {
     currentMode = mode; // ← GUARDA: fridge o pantry
+    // === MENSAJE DE ESPERA DEBAJO DE LOS BOTONES ===
+  const waitMsg = document.createElement('div');
+  waitMsg.id = 'wait-msg';
+  waitMsg.innerHTML = `
+    <small style="color:#666; font-size:0.8em; display:block; margin:10px auto; text-align:center; width:90%;">
+      <span style="display:inline-block; width:12px; height:12px; border:2px solid #ccc; border-top:2px solid #FF4500; border-radius:50%; animation:spin 1s linear infinite; margin-right:6px; vertical-align:middle;"></span>
+      Pulsa y espera 3 segundos...
+    </small>
+  `;
+  document.querySelector('.container').appendChild(waitMsg);
+
+  // === QUITAR MENSAJE EN 5 SEGUNDOS ===
+  setTimeout(() => {
+    const msg = document.getElementById('wait-msg');
+    if (msg) msg.remove();
+  }, 5000);
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       const video = document.createElement('video');
