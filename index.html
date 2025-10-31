@@ -13,6 +13,23 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+.gender-btn {
+  margin: 4px;
+  padding: 10px 18px;
+  background: #FF4500;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gender-btn:hover { transform: scale(1.05); }
+
+.gender-btn.female { background: #FF69B4; }
+.gender-btn.mix { background: #9C27B0; }
 .camera-btn:active { transform: scale(0.95); } 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -349,13 +366,16 @@ showChat();
 
  async function suggestRecipe(ingredients) {
   const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
-  const prompt = `
-Estás en la ${modo} con: ${ingredients.join(', ')}.
-Sugiere 1 receta corta, vacilona, en español de barrio.
-Usa SOLO lo que hay. Nada de inventar.
+ const prompt = `
+Eres un chef de barrio, vacilón y directo. Tienes: ${lista} en la ${modo}.
+SOLO PUEDES USAR ESO. NADA MÁS.
+Sugiere 1 receta corta, en español de barrio, con 1 paso máximo.
+Termina siempre con: ", ${getSaludo()}!"
 Ejemplos:
-- despensa + pasta → "¡Pasta con tomate en lata! Hierve y a darle!"
-- nevera + tomate + pan → "¡Pan con tomate! Unta y a morder!"
+- pasta, tomate → "¡Pasta con tomate! Hierve y a zampar, ${getSaludo()}!"
+- arroz, pollo → "¡Arroz con pollo! Saltea y a tragar, ${getSaludo()}!"
+- pan, tomate → "¡Pan con tomate! Unta y a morder, ${getSaludo()}!"
+Si no hay combo: "¡Pilla algo más, ${getSaludo()}!"
 `.trim();
 
   try {
@@ -555,36 +575,57 @@ NO inventes. Si no hay combinación, di: "¡Pilla algo, crack!"`.trim();
     }
   });
 
-// === DETECTAR GÉNERO AL INICIAR ===
-let userGender = localStorage.getItem('platogo_gender') || null;
 
-if (!userGender) {
-  const genderPrompt = document.createElement('div');
-  genderPrompt.style = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; font-family:sans-serif;';
-  genderPrompt.innerHTML = `
-    <h2 style="margin-bottom:20px;">¡Hola, chef!</h2>
-    <p style="margin-bottom:20px;">¿Eres hombre o mujer?</p>
-    <button id="btn-male" style="margin:5px; padding:12px 24px; background:#FF4500; color:white; border:none; border-radius:25px; font-weight:700;">Hombre</button>
-    <button id="btn-female" style="margin:5px; padding:12px 24px; background:#FF69B4; color:white; border:none; border-radius:25px; font-weight:700;">Mujer</button>
-  `;
-  document.body.appendChild(genderPrompt);
-
-  document.getElementById('btn-male').onclick = () => {
-    userGender = 'hombre';
-    localStorage.setItem('platogo_gender', 'hombre');
-    genderPrompt.remove();
-  };
-
-  document.getElementById('btn-female').onclick = () => {
-    userGender = 'mujer';
-    localStorage.setItem('platogo_gender', 'mujer');
-    genderPrompt.remove();
-  };
-}
 
 // === FUNCIÓN PARA PALABRAS SEGÚN GÉNERO ===
 function getWord(male, female) {
   return userGender === 'mujer' ? female : male;
+}
+// === PERSONALIZACIÓN DE GÉNERO: COLEGUÍN MODE ON ===
+let userGender = localStorage.getItem('platogo_gender');
+
+window.addEventListener('load', () => {
+  if (!userGender) {
+    // === PRIMER MENSAJE EN CHAT: PREGUNTA GÉNERO ===
+    const genderMsg = document.createElement('div');
+    genderMsg.className = 'message bot';
+    genderMsg.innerHTML = `
+      <strong>¡Ey, chef! 😎</strong><br>
+      ¿Eres más de <strong>crack</strong>, <strong>tía</strong> o <strong>mezcla</strong>?<br><br>
+      <button onclick="setGender('hombre')" class="gender-btn">CRACK</button>
+      <button onclick="setGender('mujer')" class="gender-btn female">TÍA</button>
+      <button onclick="setGender('mixto')" class="gender-btn mix">MEZCLA</button>
+    `;
+    document.getElementById('chat-messages').appendChild(genderMsg);
+    scrollChat();
+  } else {
+    // === SALUDO PERSONAL SI YA ELIGIÓ ===
+    addMessage(`¡Volviste, ${getSaludo()}! ¿Qué pillamos hoy? 😏`, 'bot');
+  }
+});
+
+// === GUARDAR GÉNERO Y CONTINUAR ===
+function setGender(g) {
+  userGender = g;
+  localStorage.setItem('platogo_gender', g);
+  
+  // Limpiar pregunta
+  document.getElementById('chat-messages').innerHTML = '';
+  
+  // Mensaje de confirmación vacilón
+  const confirmMsg = g === 'hombre' ? '¡Crack detectado! 🔥' :
+                    g === 'mujer' ? '¡Tía en la cocina! 💅' :
+                    '¡Mezcla total, vamos a romperla! 🌈';
+  
+  addMessage(confirmMsg, 'bot');
+  addMessage('¡Ahora haz una foto y te digo qué cocinar!', 'bot');
+}
+
+// === OBTENER SALUDO SEGÚN GÉNERO ===
+function getSaludo() {
+  if (userGender === 'mujer') return 'tía';
+  if (userGender === 'hombre') return 'crack';
+  return 'crack o tía';
 }
 </script>
 
