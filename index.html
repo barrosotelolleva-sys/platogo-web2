@@ -85,6 +85,24 @@
     }
   
   
+ /* === ANIMACIÓN PARA ICONO Y BOTONES === */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.camera-btn::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGRjQ1MDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIyIiB5PSI2IiB3aWR0aD0iMjAiIGhlaWdodD0iMTIiIHJ4PSIyIi8+PHBhdGggZD0iTTEyIDJ2NCIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTQiIHI9IjIiLz48L3N2Zz4=') no-repeat center;
+  background-size: contain;
+  animation: pulse 2s infinite;
+  vertical-align: middle;
+} 
 </style>
 </head>
 <body>
@@ -92,12 +110,12 @@
     <h1>Plato¡GO!</h1>
     <p class="subtitle">Foto a la nevera → ¡Plato ya!</p>
     
-    <div style="display:flex; gap:12px; justify-content:center; margin:20px 0;">
-  <button class="camera-btn" onclick="openCamera('fridge')" style="flex:1; background:linear-gradient(45deg, #00CED1, #20B2AA); color:white; border:none; padding:15px; border-radius:15px; font-weight:700; font-size:1.1em; cursor:pointer;">
+   <div style="text-align:center; margin:20px 0;">
+  <button onclick="openCamera('fridge')" class="camera-btn" style="font-size:1.1em; padding:14px 28px; background:linear-gradient(45deg, #FF4500, #FF8C00); color:white; border:none; border-radius:30px; font-weight:700; box-shadow:0 4px 10px rgba(255,69,0,0.4);">
     FOTO NEVERA
   </button>
-  <button class="camera-btn" onclick="openCamera('pantry')" style="flex:1; background:linear-gradient(45deg, #8B4513, #D2691E); color:white; border:none; padding:15px; border-radius:15px; font-weight:700; font-size:1.1em; cursor:pointer;">
-    FOTO DESPENSA
+  <button onclick="openCamera('pantry')" class="camera-btn" style="font-size:1.1em; padding:14px 28px; margin-left:10px; background:linear-gradient(45deg, #FF8C00, #FFB800); color:white; border:none; border-radius:30px; font-weight:700; box-shadow:0 4px 10px rgba(255,140,0,0.4);">
+    FOTO DESPENSA 
   </button>
     <img id="preview" class="preview" style="display:none;">
    
@@ -577,6 +595,22 @@ function scrollChat() {
     chat.scrollTop = chat.scrollHeight;
   }
 }
+// === ONBOARDING: SOLO 1 VEZ, DESPUÉS DE GÉNERO ===
+document.addEventListener('DOMContentLoaded', () => {
+  const visto = localStorage.getItem('platogo_onboarding');
+  const tieneGenero = localStorage.getItem('platogo_gender');
+
+  if (!visto && tieneGenero) {
+    const onboarding = document.getElementById('onboarding');
+    if (onboarding) onboarding.style.display = 'block';
+  }
+});
+
+function cerrarOnboarding() {
+  localStorage.setItem('platogo_onboarding', 'visto');
+  const onboarding = document.getElementById('onboarding');
+  if (onboarding) onboarding.style.display = 'none';
+}
 </script>
 
 
@@ -591,5 +625,14 @@ function scrollChat() {
 </div>
 <!-- === FIN CHAT === -->
 <!-- === FIN CHAT === -->
+ <!-- === TUTORIAL 1 VEZ (ONBOARDING) === -->
+<div id="onboarding" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:99999; color:white; text-align:center; padding:20px; box-sizing:border-box; font-family:sans-serif;">
+  <div style="margin-top:40%;">
+    <h2 style="font-size:2em; margin-bottom:20px;">¡Así se usa, chef! 😎</h2>
+    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI0ZGMzAwMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5ORVZFUkE8L3RleHQ+PC9zdmc+" style="width:120px; height:120px; margin:20px auto; display:block; animation:pulse 1.5s infinite;">
+    <p style="font-size:1.2em; margin:20px 0;">Pulsa <strong>FOTO NEVERA</strong> o <strong>DESPENSA</strong><br>y apunta a los alimentos</p>
+    <button onclick="cerrarOnboarding()" style="background:#FF4500; color:white; border:none; padding:14px 36px; border-radius:30px; font-weight:700; font-size:1.2em; cursor:pointer;">¡ENTENDIDO!</button>
+  </div>
+</div>
 </body>
 </html>
