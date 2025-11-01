@@ -327,57 +327,78 @@ showChat();
   }
 
 async function suggestRecipe(ingredients) {
-  console.log("SUGERIR PLATO LLAMADO");
-  console.log("INGREDIENTES:", ingredients);
+  console.log("INGREDIENTES DETECTADOS:", ingredients);
 
-  if (!ingredients || ingredients.length === 0) {
-    addMessage("¡No pillé nada! Haz otra foto, crack.", 'bot');
-    return;
+  // === DECIDIR CUÁNTAS RECETAS ===
+  const numRecetas = ingredients.length >= 3 ? 3 : 1;
+  const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
+  const saludo = getSaludo();
+
+  // === LIMPIAR BOTÓN ===
+  const recipeBtn = document.getElementById('suggest-btn');
+  if (recipeBtn) {
+    recipeBtn.innerHTML = `<div style="display:inline-block; animation:spin 1s linear infinite; padding:5px;">Cocinando ${numRecetas} ideas...</div>`;
+    recipeBtn.disabled = true;
   }
 
-  const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
-  const lista = ingredients.join(', ');
-  const saludo = getSaludo();
-  const prompt = `Eres un chef de barrio, vacilón y directo. Tienes SOLO: ${lista} en la ${modo}.
-Sugiere 1 receta corta usando SOLO eso. En español de barrio. Termina con: ", ${saludo}!"
-Ejemplo: pasta, tomate → "¡Pasta con tomate! Hierve y a zampar, ${saludo}!"
-NO inventes. Si no hay combo: "¡Pilla algo más, ${saludo}!"`.trim();
+  // === GENERAR RECETAS UNA POR UNA ===
+  const recetas = [];
+  for (let i = 0; i < numRecetas; i++) {
+    const prompt = `
+Eres un chef de barrio, vacilón y directo.
+Tienes SOLO: ${ingredients.join(', ')} en la ${modo}.
+Sugiere 1 receta corta, en español de barrio, usando SOLO eso.
+Termina con: ", ${saludo}!"
+NO repitas recetas anteriores.
+Ejemplos:
+- pasta, tomate → "¡Pasta con tomate! Hierve y a zampar, ${saludo}!"
+- arroz, pollo → "¡Arroz con pollo! Saltea y a tragar, ${saludo}!"
+Si no hay combo: "¡Pilla algo más, ${saludo}!"
+`.trim();
 
-  console.log("PROMPT:", prompt);
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          safetySettings: [
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+          ]
+        })
+      });
 
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        safetySettings: [
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-        ]
-      })
-    });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    console.log("HTTP STATUS:", res.status);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("ERROR API:", errorText);
-      throw new Error(`HTTP ${res.status}: ${errorText}`);
+      const data = await res.json();
+      const receta = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (receta) recetas.push(receta);
+    } catch (err) {
+      console.error("Error en receta", i+1, err);
+      recetas.push(`¡Idea ${i+1}: mezcla todo y a la sartén, ${saludo}!`);
     }
+  }
 
-    const data = await res.json();
-    console.log("DATA GEMINI:", data);
+  // === MOSTRAR RECETAS ===
+  document.getElementById('chat-messages').innerHTML = ''; // limpia chat
 
-    const receta = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if (!receta) throw new Error("Sin receta");
+  if (recetas.length === 1) {
+    addMessage(recetas[0], 'bot');
+  } else {
+    addMessage(`¡${recetas.length} PLATOS CON LO QUE TIENES, ${saludo.toUpperCase()}!`, 'bot');
+    recetas.forEach((r, i) => {
+      setTimeout(() => addMessage(`${i+1}. ${r}`, 'bot'), (i + 1) * 800);
+    });
+  }
 
-    addMessage(receta, 'bot');
-  } catch (err) {
-    console.error("ERROR FINAL:", err);
-    addMessage("¡Uy! No pillo... ¿pasta?", 'bot');
+  // === RESTAURAR BOTÓN ===
+  if (recipeBtn) {
+    setTimeout(() => {
+      recipeBtn.innerHTML = 'SUGERIR OTRA RONDA';
+      recipeBtn.disabled = false;
+    }, numRecetas * 1000);
   }
 }
-
 
 async function sendChat() {
   const input = document.getElementById('chat-input');
