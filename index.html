@@ -539,33 +539,7 @@ function showChat() {
 function getWord(male, female) {
   return userGender === 'mujer' ? female : male;
 }
-// === PREGUNTA DE GÉNERO: ENCIMA DE LOS BOTONES (ANTES DE FOTO) ===
-document.addEventListener('DOMContentLoaded', () => {
-  const savedGender = localStorage.getItem('platogo_gender');
 
-  if (!savedGender) {
-    // === CREAR PANTALLA DE PREGUNTA ===
-    const genderOverlay = document.createElement('div');
-    genderOverlay.id = 'gender-overlay';
-    genderOverlay.style = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(135deg, #FF4500, #FF8C00);
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      color: white; font-family: sans-serif; text-align: center; z-index: 9999;
-      padding: 20px; box-sizing: border-box;
-    `;
-    genderOverlay.innerHTML = `
-      <h1 style="font-size: 2.2em; margin-bottom: 10px;">¡Ey, chef! 😎</h1>
-      <p style="font-size: 1.2em; margin-bottom: 30px;">¿Eres más de <strong>crack</strong>, <strong>tía</strong> o <strong>mezcla</strong>?</p>
-      <div>
-        <button onclick="saveGender('hombre')" class="gender-big-btn">CRACK</button>
-        <button onclick="saveGender('mujer')" class="gender-big-btn female">TÍA</button>
-        <button onclick="saveGender('mixto')" class="gender-big-btn mix">MEZCLA</button>
-      </div>
-    `;
-    document.body.appendChild(genderOverlay);
-  }
-});
 
 
 
