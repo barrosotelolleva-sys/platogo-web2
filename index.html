@@ -345,33 +345,34 @@ showChat();
   }
 
 async function suggestRecipe(ingredients) {
-  console.log("INGREDIENTES DETECTADOS:", ingredients);
-
-  // === DECIDIR CUÁNTAS RECETAS ===
+  console.log("INGREDIENTES:", ingredients);
+  
   const numRecetas = ingredients.length >= 3 ? 3 : 1;
   const modo = currentMode === 'pantry' ? 'despensa' : 'nevera';
   const saludo = getSaludo();
 
-  // === LIMPIAR BOTÓN ===
   const recipeBtn = document.getElementById('suggest-btn');
   if (recipeBtn) {
     recipeBtn.innerHTML = `<div style="display:inline-block; animation:spin 1s linear infinite; padding:5px;">Cocinando ${numRecetas} ideas...</div>`;
     recipeBtn.disabled = true;
   }
 
-  // === GENERAR RECETAS UNA POR UNA ===
   const recetas = [];
+  const usadas = new Set(); // evita repetir recetas
+
   for (let i = 0; i < numRecetas; i++) {
     const prompt = `
 Eres un chef de barrio, vacilón y directo.
 Tienes SOLO: ${ingredients.join(', ')} en la ${modo}.
-Sugiere 1 receta corta, en español de barrio, usando SOLO eso.
+Sugiere 1 receta corta, creativa y viable con esos ingredientes.
+Usa al menos 2-3 ingredientes. NUNCA repitas recetas anteriores.
 Termina con: ", ${saludo}!"
-NO repitas recetas anteriores.
-Ejemplos:
-- pasta, tomate → "¡Pasta con tomate! Hierve y a zampar, ${saludo}!"
-- arroz, pollo → "¡Arroz con pollo! Saltea y a tragar, ${saludo}!"
-Si no hay combo: "¡Pilla algo más, ${saludo}!"
+Estilo: español de barrio, divertido, sin inventar ingredientes.
+Ejemplos buenos:
+- arroz, pollo, tomate → "¡Arroz con pollo y tomate! Saltea y a tragar, ${saludo}!"
+- pasta, atún, tomate → "¡Pasta con atún y tomate! Mezcla y a zampar, ${saludo}!"
+Si no hay combo: "¡Con eso no hay magia, ${saludo}! Pilla algo más."
+NO digas "mezcla todo y a la sartén" → sé creativo.
 `.trim();
 
     try {
@@ -389,33 +390,47 @@ Si no hay combo: "¡Pilla algo más, ${saludo}!"
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      const receta = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (receta) recetas.push(receta);
+      let receta = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+      // Limpieza y validación
+      if (!receta || receta.includes("mezcla todo") || receta.includes("no hay") || usadas.has(receta)) {
+        // Fallback manual creativo
+        const combos = [
+          `${ingredients[0]} con ${ingredients[1]} → ¡saltea y a flipar!`,
+          `¡${ingredients[1]} al ${ingredients[0]}! Dóra y a mojar pan`,
+          `¡Tortilla de ${ingredients[0]} y ${ingredients[2]}! Bate y a la sartén`
+        ];
+        receta = combos[i % combos.length] + `, ${saludo}!`;
+      }
+
+      usadas.add(receta);
+      recetas.push(receta);
+
     } catch (err) {
-      console.error("Error en receta", i+1, err);
-      recetas.push(`¡Idea ${i+1}: mezcla todo y a la sartén, ${saludo}!`);
+      console.error("Error receta", i+1, err);
+      recetas.push(`¡Idea ${i+1}: ${ingredients[i % ingredients.length]} con lo que pilles, ${saludo}!`);
     }
   }
 
-  // === MOSTRAR RECETAS ===
-  document.getElementById('chat-messages').innerHTML = ''; // limpia chat
-
-  if (recetas.length === 1) {
-    addMessage(recetas[0], 'bot');
-  } else {
-    addMessage(`¡${recetas.length} PLATOS CON LO QUE TIENES, ${saludo.toUpperCase()}!`, 'bot');
+  // === MOSTRAR RECETAS CON ANIMACIÓN ===
+  document.getElementById('chat-messages').innerHTML = '';
+  
+  if (numRecetas > 1) {
+    addMessage(`¡${numRecetas} PLATOS ÉPICOS CON LO QUE TIENES, ${saludo.toUpperCase()}!`, 'bot');
     recetas.forEach((r, i) => {
-      setTimeout(() => addMessage(`${i+1}. ${r}`, 'bot'), (i + 1) * 800);
+      setTimeout(() => addMessage(`${i+1}. ${r}`, 'bot'), (i + 1) * 900);
     });
+  } else {
+    addMessage(recetas[0], 'bot');
   }
 
   // === RESTAURAR BOTÓN ===
-  if (recipeBtn) {
-    setTimeout(() => {
+  setTimeout(() => {
+    if (recipeBtn) {
       recipeBtn.innerHTML = 'SUGERIR OTRA RONDA';
       recipeBtn.disabled = false;
-    }, numRecetas * 1000);
-  }
+    }
+  }, numRecetas * 1100);
 }
 
 async function sendChat() {
