@@ -567,49 +567,78 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// === GUARDAR GÉNERO Y QUITAR PANTALLA ===
+
+
+// === SCROLL AL FINAL DEL CHAT ===
+function scrollChat() {
+  const chat = document.getElementById('chat-messages');
+  if (chat) chat.scrollTop = chat.scrollHeight;
+}
+
+// === OBTENER SALUDO + PALABRAS PERSONALIZADAS ===
+function getSaludo() {
+  const g = localStorage.getItem('platogo_gender');
+  const palabras = g === 'mujer' 
+    ? ['tía', 'fenómena', 'reina', 'jefa', 'diosa', 'crack']
+    : g === 'mixto'
+    ? ['crack o tía', 'fenómeno/a', 'jefe/a', 'maestro/a']
+    : ['crack', 'fenómeno', 'maestro', 'jefe', 'leyenda'];
+  
+  return palabras[Math.floor(Math.random() * palabras.length)];
+}
+
+// === GÉNERO + ONBOARDING: ORDEN CORRECTO Y SIN DUPLICADOS ===
+document.addEventListener('DOMContentLoaded', () => {
+  const tieneGenero = localStorage.getItem('platogo_gender');
+  const vistoOnboarding = localStorage.getItem('platogo_onboarding');
+
+  // 1. SIN GÉNERO → PREGUNTAR
+  if (!tieneGenero) {
+    const genderOverlay = document.createElement('div');
+    genderOverlay.id = 'gender-overlay';
+    genderOverlay.style = `position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#FF4500,#FF8C00);display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-family:sans-serif;text-align:center;z-index:9999;padding:20px;box-sizing:border-box;`;
+    genderOverlay.innerHTML = `
+      <h1 style="font-size:2.2em;margin-bottom:10px;">¡Ey, chef! 😎</h1>
+      <p style="font-size:1.2em;margin-bottom:30px;">¿Eres más de <strong>crack</strong>, <strong>tía</strong> o <strong>mezcla</strong>?</p>
+      <div>
+        <button onclick="saveGender('hombre')" class="gender-big-btn">CRACK</button>
+        <button onclick="saveGender('mujer')" class="gender-big-btn female">TÍA</button>
+        <button onclick="saveGender('mixto')" class="gender-big-btn mix">MEZCLA</button>
+      </div>
+    `;
+    document.body.appendChild(genderOverlay);
+  }
+  // 2. CON GÉNERO, SIN ONBOARDING → TUTORIAL
+  else if (!vistoOnboarding) {
+    const onboarding = document.getElementById('onboarding');
+    if (onboarding) onboarding.style.display = 'block';
+  }
+  // 3. TODO LISTO → BIENVENIDA
+  else {
+    addMessage(`¡Volviste, ${getSaludo()}! ¿Qué pillamos hoy? 😏`, 'bot');
+  }
+});
+
 function saveGender(g) {
   localStorage.setItem('platogo_gender', g);
   const overlay = document.getElementById('gender-overlay');
   if (overlay) overlay.remove();
 
-  // Mensaje de bienvenida en el chat
-  const welcome = g === 'hombre' ? '¡Crack en la cocina! 🔥' :
-                 g === 'mujer' ? '¡Tía al mando! 💅' :
-                 '¡Mezcla total, vamos a romperla! 🌈';
-  addMessage(welcome, 'bot');
-  addMessage('¡Haz una foto y te digo qué cocinar!', 'bot');
-}
+  const msg = g === 'hombre' ? '¡Crack detectado! 🔥' :
+             g === 'mujer' ? '¡Tía al mando! 💅' :
+             '¡Mezcla total, vamos a romperla! 🌈';
+  addMessage(msg, 'bot');
 
-// === OBTENER SALUDO ===
-function getSaludo() {
-  const g = localStorage.getItem('platogo_gender');
-  if (g === 'mujer') return 'tía';
-  if (g === 'hombre') return 'crack';
-  return 'crack o tía';
+  // Mostrar onboarding
+  const onboarding = document.getElementById('onboarding');
+  if (onboarding) onboarding.style.display = 'block';
 }
-// === SCROLL AL FINAL DEL CHAT (ALWAYS VISIBLE) ===
-function scrollChat() {
-  const chat = document.getElementById('chat-messages');
-  if (chat) {
-    chat.scrollTop = chat.scrollHeight;
-  }
-}
-// === ONBOARDING: SOLO 1 VEZ, DESPUÉS DE GÉNERO ===
-document.addEventListener('DOMContentLoaded', () => {
-  const visto = localStorage.getItem('platogo_onboarding');
-  const tieneGenero = localStorage.getItem('platogo_gender');
-
-  if (!visto && tieneGenero) {
-    const onboarding = document.getElementById('onboarding');
-    if (onboarding) onboarding.style.display = 'block';
-  }
-});
 
 function cerrarOnboarding() {
   localStorage.setItem('platogo_onboarding', 'visto');
   const onboarding = document.getElementById('onboarding');
   if (onboarding) onboarding.style.display = 'none';
+  addMessage('¡Ahora haz una foto y te digo qué cocinar!', 'bot');
 }
 </script>
 
